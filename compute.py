@@ -44,7 +44,14 @@ def generate_population(a, b, n):
 
 def add_precision(population, d):
     p = compute_precision(d)
-    return [f'{x:.{p}f}' for x in population]
+    return [f'{left_pad(x)}{x:.{p}f}' for x in population]
+
+
+def left_pad(x):
+    if x >= 0:
+        return " "
+    else:
+        return ""
 
 
 def proper_round(num, dec=0):
@@ -63,10 +70,10 @@ def compute_fx(x):
 
 
 if __name__ == '__main__':
-    a = 1
-    b = 2
+    a = -4
+    b = 12
     d = 10 ** -2
-    xr1 = 1.983
+    xr1 = -2.174
 
     prec = compute_precision(d)
     print(compute_precision(d))
@@ -97,3 +104,8 @@ if __name__ == '__main__':
     print(fx2)
     print(compute_mod(-1.234))
     print(compute_mod(5.98744))
+    print(f"left_pad={left_pad(33432424.342342)}x")
+    print(x_reals_str)
+
+    print("{0: }".format(-134.5))
+    print("{0: }".format(13.4))

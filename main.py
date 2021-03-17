@@ -15,7 +15,7 @@ def generate_table(dataframe, max_rows=10):
             html.Tr([
                 html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
             ]) for i in range(min(len(dataframe), max_rows))
-        ])
+        ], style={'font-family': 'Courier', 'white-space': 'pre'})
     ])
 
 
@@ -29,15 +29,15 @@ app.layout = html.Div(children=[
     html.Div([
         html.Div([
             html.Label('Początek przedziału:'),
-            dcc.Input(id='a_value', type='text', placeholder='a', value=-4),
+            dcc.Input(id='a_value', type='number', placeholder='wprowadź a', value=-4),
         ]),
         html.Div([
             html.Label('Koniec przedziału:'),
-            dcc.Input(id='b_value', type='text', placeholder='b', value=12),
+            dcc.Input(id='b_value', type='number', placeholder='wprowadź b', value=12),
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Label('Ilość osobników:'),
-            dcc.Input(id='n_value', type='text', placeholder='n', value=10),
+            dcc.Input(id='n_value', type='number', min=1, max=100, placeholder='wprowadź n', value=10),
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Label('Dokładność:'),
@@ -73,6 +73,9 @@ app.layout = html.Div(children=[
               State('n_value', 'value'),
               State('d_value', 'value'))
 def update_table(n_clicks, input_a, input_b, input_n, input_d):
+    if None in [input_a, input_b, input_n]:
+        return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
+                        style={'color': 'red'})
     a = int(input_a)
     b = int(input_b)
     n = int(input_n)
