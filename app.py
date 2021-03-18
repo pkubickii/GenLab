@@ -85,6 +85,9 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d):
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
         return html.Div("Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
                         style={'color': 'red'}), input_a, input_b, input_n
+    elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
+        return html.Div("Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
+                        style={'color': 'red'}), input_a, input_b, input_n
 
     if input_a > input_b:
         a = int(np.ma.round(input_b))
