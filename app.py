@@ -2,6 +2,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
+import numpy as np
 import compute as cmp
 from dash.dependencies import Input, Output, State
 
@@ -50,7 +51,7 @@ app.layout = html.Div(children=[
                              {'label': '10^-4', 'value': (10 ** -4)},
                              {'label': '10^-5', 'value': (10 ** -5)},
                              {'label': '10^-6', 'value': (10 ** -6)},
-                         ], value=(10 ** -3)
+                         ], value=(10 ** -3), clearable=False
                          ),
         ], style={'margin-left': '10px'}),
         html.Div([
@@ -69,6 +70,9 @@ app.layout = html.Div(children=[
 
 
 @app.callback(Output('population_table', 'children'),
+              Output('a_value', 'value'),
+              Output('b_value', 'value'),
+              Output('n_value', 'value'),
               Input('submit_button', 'n_clicks'),
               State('a_value', 'value'),
               State('b_value', 'value'),
@@ -77,10 +81,19 @@ app.layout = html.Div(children=[
 def update_table(n_clicks, input_a, input_b, input_n, input_d):
     if None in [input_a, input_b, input_n]:
         return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
-                        style={'color': 'red'})
-    a = int(input_a)
-    b = int(input_b)
-    n = int(input_n)
+                        style={'color': 'red'}), input_a, input_b, input_n
+    elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
+        return html.Div("Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
+                        style={'color': 'red'}), input_a, input_b, input_n
+
+    if input_a > input_b:
+        a = int(np.ma.round(input_b))
+        b = int(np.ma.round(input_a))
+    else:
+        a = int(np.ma.round(input_a))
+        b = int(np.ma.round(input_b))
+
+    n = int(np.ma.round(input_n))
     d = input_d
     length = cmp.compute_length(a, b, d)
     x_reals = cmp.add_precision(cmp.generate_population(a, b, n), d)
@@ -90,6 +103,7 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d):
     x_reals2 = cmp.add_precision([cmp.compute_x_real(x_int, length, a, b) for x_int in x_ints], d)
     fxs = cmp.add_precision([cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2], d)
     df = pd.DataFrame({
+        "Lp.": np.arange(1, n + 1),
         "x_real": x_reals,
         "x_int": x_ints,
         "x_bin": x_bins,
@@ -97,7 +111,7 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d):
         "x_real2": x_reals2,
         "f(x)": fxs
     })
-    return generate_table(df, max_rows=n)
+    return generate_table(df, max_rows=n), a, b, n
 
 
 if __name__ == '__main__':
