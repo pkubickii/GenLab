@@ -4,6 +4,7 @@ import dash_html_components as html
 import pandas as pd
 import numpy as np
 import compute as cmp
+import selection as sel
 from dash.dependencies import Input, Output, State
 
 
@@ -104,15 +105,23 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d):
     x_bins = [cmp.compute_x_bin(x_int, length) for x_int in x_ints]
     x_ints2 = [cmp.x_int_from_x_bin(x_bin) for x_bin in x_bins]
     x_reals2 = cmp.add_precision([cmp.compute_x_real(x_int, length, a, b) for x_int in x_ints], d)
-    fxs = cmp.add_precision([cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2], d)
+    # fxs = cmp.add_precision([cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2], d)
+    fxs = [cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2]
+    gxs = sel.compute_gxs(fxs, min(fxs), d)
+    pxs = sel.compute_pxs(gxs)
+    qxs = sel.compute_qxs(pxs)
+    rs = sel.compute_r(n)
+    x_reals_sel = sel.get_new_population(rs, qxs, x_reals)
     df = pd.DataFrame({
         "Lp.": np.arange(1, n + 1),
         "x_real": x_reals,
-        "x_int": x_ints,
-        "x_bin": x_bins,
-        "x_int2": x_ints2,
-        "x_real2": x_reals2,
-        "f(x)": fxs
+        "f(x)": fxs,
+        "g(x)": gxs,
+        "p(x)": pxs,
+        "q(x)": qxs,
+        "r": rs,
+        "x_real selected": x_reals_sel
+
     })
     return generate_table(df, max_rows=n), a, b, n
 
