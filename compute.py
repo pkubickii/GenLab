@@ -62,30 +62,6 @@ def compute_fx(x):
     return float(f'{math.fmod(x, 1):.3f}') * (math.cos(20 * math.pi * x) - math.sin(x))
 
 
-if __name__ == '__main__':
-    # Testy
-    a = -4
-    b = 12
-    d = 10 ** -2
-    xr1 = 6.47
-
-    prec = compute_precision(d)
-    print(f"Prec num: {compute_precision(d)}")
-    chlen = compute_length(a, b, d)
-    print(f"l= {chlen}")
-    xi1 = compute_x_int(xr1, chlen, a, b)
-    xi = x_int_no_ceil(xr1, chlen, a, b)
-    print(f"x_int= {xi1}")
-    print(f"x_int_no_c= {xi}")
-    xr2 = compute_x_real(xi1, chlen, a, b)
-    print(f"x_real2= {xr2}")
-    print(f"xr_prec= {x_real_to_string(xr2, prec)}")
-    xb = compute_x_bin(xi1, chlen)
-    print(f"x_bin= {xb}")
-    xb_arr = x_bin_to_int_array(xb)
-    print(xb_arr)
-    xi2 = x_int_from_x_bin(xb)
-    print(f"x_int2= {xi2}")
-    x_reals = generate_population(-4, 12, 20)
-    x_reals_str = add_precision(x_reals, d)
-    print(x_reals_str)
+def compute_xreals_from_xbins(a, b, length, x_bins):
+    x_ints = [x_int_from_x_bin(x_bin) for x_bin in x_bins]
+    return [compute_x_real(x_int, length, a, b) for x_int in x_ints]

@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import compute as cmp
 import selection as sel
+import crossover as cross
+import mutation as mut
 from dash.dependencies import Input, Output, State
 
 
@@ -26,6 +28,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
+app.title = 'GenLab'
 
 app.layout = html.Div(children=[
     html.H1(children='Genetic Laboratory'),
@@ -99,28 +102,50 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d):
 
     n = int(np.ma.round(input_n))
     d = input_d
+    pk = 0.75
+    pm = 0.005
     length = cmp.compute_length(a, b, d)
     x_reals = cmp.add_precision(cmp.generate_population(a, b, n), d)
-    x_ints = [cmp.compute_x_int(float(x_real), length, a, b) for x_real in x_reals]
-    x_bins = [cmp.compute_x_bin(x_int, length) for x_int in x_ints]
-    x_ints2 = [cmp.x_int_from_x_bin(x_bin) for x_bin in x_bins]
-    x_reals2 = cmp.add_precision([cmp.compute_x_real(x_int, length, a, b) for x_int in x_ints], d)
+
+    # x_ints = [cmp.compute_x_int(float(x_real), length, a, b) for x_real in x_reals]
+    # x_bins = [cmp.compute_x_bin(x_int, length) for x_int in x_ints]
+    # x_ints2 = [cmp.x_int_from_x_bin(x_bin) for x_bin in x_bins]
+    # x_reals2 = cmp.add_precision([cmp.compute_x_real(x_int, length, a, b) for x_int in x_ints], d)
     # fxs = cmp.add_precision([cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2], d)
-    fxs = [cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2]
+    # fxs = [cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2]
+
+    fxs = [cmp.compute_fx(float(x)) for x in x_reals]
     gxs = sel.compute_gxs(fxs, min(fxs), d)
     pxs = sel.compute_pxs(gxs)
     qxs = sel.compute_qxs(pxs)
     rs = sel.compute_r(n)
-    x_reals_sel = sel.get_new_population(rs, qxs, x_reals)
+
+    sel_reals = sel.get_new_population(rs, qxs, x_reals)
+    sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
+    sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
+    parent_bins = cross.get_parents(sel_bins, pk)
+    cross_points = cross.get_cross_points(parent_bins, length)
+    children_bins = cross.get_children(parent_bins, cross_points)
+    children_w_cp = cross.get_children_w_cp(children_bins, cross_points)
+    pop_after_cross = cross.get_pop_after_cross(children_bins, sel_bins)
+    mutation_indices = [mut.get_mutation_indices(length, pm) for _ in range(n)]
+    mutation_indices_formatted = [f'{x}' for x in mutation_indices]
+    pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
+    x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
+    fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
+
     df = pd.DataFrame({
         "Lp.": np.arange(1, n + 1),
-        "x_real": x_reals,
-        "f(x)": fxs,
-        "g(x)": gxs,
-        "p(x)": pxs,
-        "q(x)": qxs,
-        "r": rs,
-        "x_real selected": x_reals_sel
+        "x_real_sel": sel_reals,
+        "x_bin_sel": sel_bins,
+        "rodzice": parent_bins,
+        "pc": cross_points,
+        "dzieci": children_w_cp,
+        "pop. po krzyżowaniu": pop_after_cross,
+        "mutowany gen": mutation_indices_formatted,
+        "pop. po mutacji": pop_after_mut,
+        "x_real": x_reals_after_cross_mut,
+        "f(x)": fxs_cross_mutation,
 
     })
     return generate_table(df, max_rows=n), a, b, n
