@@ -59,6 +59,14 @@ app.layout = html.Div(children=[
                          ),
         ], style={'margin-left': '10px'}),
         html.Div([
+            html.Label('pk:'),
+            dcc.Input(id='pk_value', type='number', min=0, max=1, placeholder='pk', value=0.75),
+        ], style={'margin-left': '10px'}),
+        html.Div([
+            html.Label('pm:'),
+            dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.005),
+        ], style={'margin-left': '10px'}),
+        html.Div([
             html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
                         style={'margin-left': '10px', 'margin-top': '23px'}),
         ])
@@ -81,9 +89,11 @@ app.layout = html.Div(children=[
               State('a_value', 'value'),
               State('b_value', 'value'),
               State('n_value', 'value'),
-              State('d_value', 'value'))
-def update_table(n_clicks, input_a, input_b, input_n, input_d):
-    if None in [input_a, input_b, input_n]:
+              State('d_value', 'value'),
+              State('pk_value', 'value'),
+              State('pm_value', 'value'))
+def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm):
+    if None in [input_a, input_b, input_n, input_pk, input_pm]:
         return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
                         style={'color': 'red'}), input_a, input_b, input_n
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
@@ -102,8 +112,8 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d):
 
     n = int(np.ma.round(input_n))
     d = input_d
-    pk = 0.75
-    pm = 0.005
+    pk = input_pk
+    pm = input_pm
     length = cmp.compute_length(a, b, d)
     x_reals = cmp.add_precision(cmp.generate_population(a, b, n), d)
 
