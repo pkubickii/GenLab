@@ -7,6 +7,7 @@ import compute as cmp
 import selection as sel
 import crossover as cross
 import mutation as mut
+import elite
 from dash.dependencies import Input, Output, State
 
 
@@ -67,6 +68,17 @@ app.layout = html.Div(children=[
             dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.005),
         ], style={'margin-left': '10px'}),
         html.Div([
+            html.Label('elita:'),
+            dcc.Checklist(id='elite_value',
+                          options=[
+                              {'label': 'włączona', 'value': 'on'},
+                          ])
+        ], style={'margin-left': '10px'}),
+        html.Div([
+            html.Label('T:'),
+            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=100),
+        ], style={'margin-left': '10px'}),
+        html.Div([
             html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
                         style={'margin-left': '10px', 'margin-top': '23px'}),
         ])
@@ -78,6 +90,9 @@ app.layout = html.Div(children=[
     html.Div([
 
     ], id='population_table'),
+
+    dcc.Input(id='p_value'),
+
 ])
 
 
@@ -85,15 +100,18 @@ app.layout = html.Div(children=[
               Output('a_value', 'value'),
               Output('b_value', 'value'),
               Output('n_value', 'value'),
+              Output('p_value', 'value'),  # test
               Input('submit_button', 'n_clicks'),
               State('a_value', 'value'),
               State('b_value', 'value'),
               State('n_value', 'value'),
               State('d_value', 'value'),
               State('pk_value', 'value'),
-              State('pm_value', 'value'))
-def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm):
-    if None in [input_a, input_b, input_n, input_pk, input_pm]:
+              State('pm_value', 'value'),
+              State('elite_value', 'value'),
+              State('t_value', 'value'))
+def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
+    if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
         return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
                         style={'color': 'red'}), input_a, input_b, input_n
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
@@ -114,35 +132,50 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     d = input_d
     pk = input_pk
     pm = input_pm
+
     length = cmp.compute_length(a, b, d)
     x_reals = cmp.add_precision(cmp.generate_population(a, b, n), d)
 
-    # x_ints = [cmp.compute_x_int(float(x_real), length, a, b) for x_real in x_reals]
-    # x_bins = [cmp.compute_x_bin(x_int, length) for x_int in x_ints]
-    # x_ints2 = [cmp.x_int_from_x_bin(x_bin) for x_bin in x_bins]
-    # x_reals2 = cmp.add_precision([cmp.compute_x_real(x_int, length, a, b) for x_int in x_ints], d)
-    # fxs = cmp.add_precision([cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2], d)
-    # fxs = [cmp.compute_fx(float(x_real2)) for x_real2 in x_reals2]
+    sel_reals = []
+    sel_bins = []
+    parent_bins = []
+    cross_points = []
+    children_w_cp = []
+    pop_after_cross = []
+    mutation_indices_formatted = []
+    pop_after_mut = []
+    x_reals_after_cross_mut = []
+    fxs_cross_mutation = []
+    p_temp = ''
 
-    fxs = [cmp.compute_fx(float(x)) for x in x_reals]
-    gxs = sel.compute_gxs(fxs, min(fxs), d)
-    pxs = sel.compute_pxs(gxs)
-    qxs = sel.compute_qxs(pxs)
-    rs = sel.compute_r(n)
+    # main loop:
+    for i in range(input_t):
+        fxs = [cmp.compute_fx(float(x)) for x in x_reals]
+        gxs = sel.compute_gxs(fxs, min(fxs), d)
+        pxs = sel.compute_pxs(gxs)
+        qxs = sel.compute_qxs(pxs)
+        rs = sel.compute_r(n)
+        sel_reals = sel.get_new_population(rs, qxs, x_reals)
+        sel_fxs = [cmp.compute_fx(float(x)) for x in sel_reals]
+        sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
+        sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
+        parent_bins = cross.get_parents(sel_bins, pk)
+        cross_points = cross.get_cross_points(parent_bins, length)
+        children_bins = cross.get_children(parent_bins, cross_points)
+        children_w_cp = cross.get_children_w_cp(children_bins, cross_points)
+        pop_after_cross = cross.get_pop_after_cross(children_bins, sel_bins)
+        mutation_indices = [mut.get_mutation_indices(length, pm) for _ in range(n)]
+        mutation_indices_formatted = [f'{x}' for x in mutation_indices]
+        pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
+        x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
+        p_temp = f'{elite.get_best(sel_reals, sel_fxs)[0]} f(x): {elite.get_best(sel_reals, sel_fxs)[-1]}'
+        if input_elite is not None:
+            x_elite = elite.get_best(sel_reals, sel_fxs)
+            elite.check_and_swap(x_elite, x_reals_after_cross_mut)
+        fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
+        x_reals = x_reals_after_cross_mut
 
-    sel_reals = sel.get_new_population(rs, qxs, x_reals)
-    sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
-    sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
-    parent_bins = cross.get_parents(sel_bins, pk)
-    cross_points = cross.get_cross_points(parent_bins, length)
-    children_bins = cross.get_children(parent_bins, cross_points)
-    children_w_cp = cross.get_children_w_cp(children_bins, cross_points)
-    pop_after_cross = cross.get_pop_after_cross(children_bins, sel_bins)
-    mutation_indices = [mut.get_mutation_indices(length, pm) for _ in range(n)]
-    mutation_indices_formatted = [f'{x}' for x in mutation_indices]
-    pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
-    x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
-    fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
+    p = p_temp
 
     df = pd.DataFrame({
         "Lp.": np.arange(1, n + 1),
@@ -158,7 +191,7 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
         "f(x)": fxs_cross_mutation,
 
     })
-    return generate_table(df, max_rows=n), a, b, n
+    return generate_table(df, max_rows=n), a, b, n, p
 
 
 if __name__ == '__main__':
