@@ -72,11 +72,11 @@ app.layout = html.Div(children=[
             dcc.Checklist(id='elite_value',
                           options=[
                               {'label': 'włączona', 'value': 'on'},
-                          ])
+                          ], value=['on'])
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=100),
+            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=1),
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
@@ -148,6 +148,7 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     fxs_cross_mutation = []
     p_temp = ''
 
+    elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
     # main loop:
     for i in range(input_t):
         fxs = [cmp.compute_fx(float(x)) for x in x_reals]
@@ -170,8 +171,10 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
         x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
         p_temp = f'{elite.get_best(sel_reals, sel_fxs)[0]} f(x): {elite.get_best(sel_reals, sel_fxs)[-1]}'
         if input_elite is not None:
-            x_elite = elite.get_best(sel_reals, sel_fxs)
-            elite.check_and_swap(x_elite, x_reals_after_cross_mut)
+            fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
+            elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
+            x_reals_after_cross_mut = elite.inject(elite_memo, x_reals_after_cross_mut)
+            elite_memo = elite_new
         fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
         x_reals = x_reals_after_cross_mut
 
