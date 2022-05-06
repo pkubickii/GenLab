@@ -109,17 +109,18 @@ app.layout = html.Div(children=[
               State('pk_value', 'value'),
               State('pm_value', 'value'),
               State('elite_value', 'value'),
-              State('t_value', 'value'))
-def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
+              State('t_value', 'value'),
+              State('p_value', 'value'))
+def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t, input_p):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
         return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
-                        style={'color': 'red'}), input_a, input_b, input_n
+                        style={'color': 'red'}), input_a, input_b, input_n, input_p
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
         return html.Div("Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
-                        style={'color': 'red'}), input_a, input_b, input_n
+                        style={'color': 'red'}), input_a, input_b, input_n, input_p
     elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
         return html.Div("Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
-                        style={'color': 'red'}), input_a, input_b, input_n
+                        style={'color': 'red'}), input_a, input_b, input_n, input_p
 
     if input_a > input_b:
         a = int(np.ma.round(input_b))
