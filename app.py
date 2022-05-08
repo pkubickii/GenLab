@@ -1,6 +1,6 @@
-import dash
-from dash import dcc
-from dash import html
+from dash import Dash, html, dcc, dash_table
+import dash_daq as daq
+import plotly.express as px
 import pandas as pd
 import numpy as np
 import compute as cmp
@@ -24,9 +24,13 @@ def generate_table(dataframe, max_rows=10):
     ])
 
 
+def results_table(df):
+    return dash_table.DataTable(df, [{"name": i, "id": i} for i in df.columns])
+
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 app.title = 'GenLab'
@@ -76,7 +80,7 @@ app.layout = html.Div(children=[
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=1),
+            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=100),
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
@@ -87,20 +91,39 @@ app.layout = html.Div(children=[
     }),
 
     html.Br(),
+    daq.ToggleSwitch(
+        id='btn_toggle',
+        value=True
+    ),
+    html.Div([
+        html.Div([
+
+        ], id='population_table'),
+    ], id='div_toggle'),
+
+    html.Br(),
+    dcc.Graph(id="ag_graph"),
+    html.Br(),
     html.Div([
 
-    ], id='population_table'),
-
-    dcc.Input(id='p_value'),
-
+    ], id="results_table"),
+    html.Br(),
+    html.Div([], id="data_table"),
 ])
+
+
+@app.callback(Output('div_toggle', 'hidden'),
+              Input('btn_toggle', 'value'))
+def toggle_table(value):
+    return value
 
 
 @app.callback(Output('population_table', 'children'),
               Output('a_value', 'value'),
               Output('b_value', 'value'),
               Output('n_value', 'value'),
-              Output('p_value', 'value'),  # test
+              Output('ag_graph', 'figure'),
+              Output('results_table', 'children'),
               Input('submit_button', 'n_clicks'),
               State('a_value', 'value'),
               State('b_value', 'value'),
@@ -109,18 +132,17 @@ app.layout = html.Div(children=[
               State('pk_value', 'value'),
               State('pm_value', 'value'),
               State('elite_value', 'value'),
-              State('t_value', 'value'),
-              State('p_value', 'value'))
-def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t, input_p):
+              State('t_value', 'value'))
+def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
         return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
-                        style={'color': 'red'}), input_a, input_b, input_n, input_p
+                        style={'color': 'red'}), input_a, input_b, input_n
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
         return html.Div("Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
-                        style={'color': 'red'}), input_a, input_b, input_n, input_p
+                        style={'color': 'red'}), input_a, input_b, input_n
     elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
         return html.Div("Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
-                        style={'color': 'red'}), input_a, input_b, input_n, input_p
+                        style={'color': 'red'}), input_a, input_b, input_n
 
     if input_a > input_b:
         a = int(np.ma.round(input_b))
@@ -147,7 +169,9 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     pop_after_mut = []
     x_reals_after_cross_mut = []
     fxs_cross_mutation = []
-    p_temp = ''
+    fx_maxs = []
+    fx_mins = []
+    fx_avgs = []
 
     elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
     # main loop:
@@ -170,7 +194,6 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
         mutation_indices_formatted = [f'{x}' for x in mutation_indices]
         pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
         x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
-        p_temp = f'{elite.get_best(sel_reals, sel_fxs)[0]} f(x): {elite.get_best(sel_reals, sel_fxs)[-1]}'
         if input_elite is not None:
             fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
             elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
@@ -178,8 +201,9 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
             elite_memo = elite_new
         fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
         x_reals = x_reals_after_cross_mut
-
-    p = p_temp
+        fx_maxs.append(np.max(fxs_cross_mutation))
+        fx_avgs.append(np.average(fxs_cross_mutation))
+        fx_mins.append(np.min(fxs_cross_mutation))
 
     df = pd.DataFrame({
         "Lp.": np.arange(1, n + 1),
@@ -193,9 +217,43 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
         "pop. po mutacji": pop_after_mut,
         "x_real": x_reals_after_cross_mut,
         "f(x)": fxs_cross_mutation,
-
     })
-    return generate_table(df, max_rows=n), a, b, n, p
+
+    uniques, counts = np.unique(x_reals, return_counts=True)
+    uni_ints = [cmp.compute_x_int(float(x), length, a, b) for x in uniques]
+    uni_bins = [cmp.compute_x_bin(x, length) for x in uni_ints]
+    uni_fxs = [cmp.compute_fx(float(x)) for x in uniques]
+    print(uni_bins)
+
+    print(f'uniques: {uniques} \ncounts: {counts}')
+    percentage = dict(zip(uniques, counts * 100 / len(x_reals)))
+    print(f'full: {percentage}')
+
+    df_result = pd.DataFrame({
+        "Lp.": np.arange(1, len(uniques) + 1),
+        "x_real": uniques,
+        "x_bin": uni_bins,
+        "f(x)": uni_fxs,
+        "percentage": [f'{float(count) / len(x_reals):.0%}' for count in counts],
+    })
+
+    df_result_sorted = df_result.sort_values(by="f(x)", ascending=False)
+
+    df_ag = pd.DataFrame({
+        "fx_max": fx_maxs,
+        "fx_avg": fx_avgs,
+        "fx_min": fx_mins,
+        "pokolenie": np.arange(1, input_t + 1),
+    })
+
+    ag_fig = px.line(df_ag,
+                     x="pokolenie",
+                     y=["fx_max", "fx_avg", "fx_min"],
+                     title="Wykres przebiegu f(x)_max, f(x)_min oraz f(x)_avg:",
+                     labels={"pokolenie": f'Pokolenia dla T={input_t}', "value": "Wartości f(x)"},
+                     markers="true")
+
+    return generate_table(df, max_rows=n), a, b, n, ag_fig, generate_table(df_result_sorted, max_rows=len(uniques))
 
 
 if __name__ == '__main__':
