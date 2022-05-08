@@ -230,7 +230,6 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     print(f'full: {percentage}')
 
     df_result = pd.DataFrame({
-        "Lp.": np.arange(1, len(uniques) + 1),
         "x_real": uniques,
         "x_bin": uni_bins,
         "f(x)": uni_fxs,
@@ -238,6 +237,8 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     })
 
     df_result_sorted = df_result.sort_values(by="f(x)", ascending=False)
+    df_result_sorted.insert(0, "Lp.", np.arange(1, len(uniques) + 1))
+
 
     df_ag = pd.DataFrame({
         "fx_max": fx_maxs,
