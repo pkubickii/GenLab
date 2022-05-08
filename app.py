@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, dash_table
+from dash import Dash, html, dcc, dash_table, no_update
 import dash_daq as daq
 import plotly.express as px
 import pandas as pd
@@ -25,7 +25,23 @@ def generate_table(dataframe, max_rows=10):
 
 
 def results_table(df):
-    return dash_table.DataTable(df, [{"name": i, "id": i} for i in df.columns])
+    return dash_table.DataTable(
+        data=df.to_dict("records"),
+        style_table={
+            'marginBottom': '3rem',
+            'fontSize': '1.8rem',
+        },
+        style_header={
+            'fontWeight': 'bold',
+            'fontSize': '2rem'
+        },
+        style_data_conditional=[
+            {
+                'if': {'row_index': 'odd'},
+                'backgroundColor': 'rgb(210, 210, 210)',
+            }
+        ]
+    )
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -49,7 +65,7 @@ app.layout = html.Div(children=[
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Label('Ilość osobników:'),
-            dcc.Input(id='n_value', type='number', min=1, max=100, placeholder='wprowadź n', value=10),
+            dcc.Input(id='n_value', type='number', min=1, max=1000, placeholder='wprowadź n', value=10),
         ], style={'margin-left': '10px'}),
         html.Div([
             html.Label('Dokładność:'),
@@ -88,7 +104,11 @@ app.layout = html.Div(children=[
         ])
     ], style={
         'display': 'flex',
+        'margin': 'auto',
+        'width': '100%'
     }),
+    html.Br(),
+    html.Div([], id="error_msg"),
 
     html.Br(),
     daq.ToggleSwitch(
@@ -104,11 +124,11 @@ app.layout = html.Div(children=[
     html.Br(),
     dcc.Graph(id="ag_graph"),
     html.Br(),
-    html.Div([
 
-    ], id="results_table"),
-    html.Br(),
-    html.Div([], id="data_table"),
+    html.Div([], id="results_table", style={
+        'margin': 'auto',
+        'width': '50%'
+    }),
 ])
 
 
@@ -124,6 +144,7 @@ def toggle_table(value):
               Output('n_value', 'value'),
               Output('ag_graph', 'figure'),
               Output('results_table', 'children'),
+              Output('error_msg', 'children'),
               Input('submit_button', 'n_clicks'),
               State('a_value', 'value'),
               State('b_value', 'value'),
@@ -135,14 +156,17 @@ def toggle_table(value):
               State('t_value', 'value'))
 def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
-        return html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
-                        style={'color': 'red'}), input_a, input_b, input_n
+        return no_update, input_a, input_b, input_n, no_update, no_update, \
+               html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
+                        style={'color': 'red'})
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
-        return html.Div("Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
-                        style={'color': 'red'}), input_a, input_b, input_n
+        return no_update, input_a, input_b, input_n, no_update, no_update, html.Div(
+            "Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
+            style={'color': 'red'})
     elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
-        return html.Div("Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
-                        style={'color': 'red'}), input_a, input_b, input_n
+        return no_update, input_a, input_b, input_n, no_update, html.Div(
+            "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
+            style={'color': 'red'})
 
     if input_a > input_b:
         a = int(np.ma.round(input_b))
@@ -223,11 +247,9 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     uni_ints = [cmp.compute_x_int(float(x), length, a, b) for x in uniques]
     uni_bins = [cmp.compute_x_bin(x, length) for x in uni_ints]
     uni_fxs = [cmp.compute_fx(float(x)) for x in uniques]
-    print(uni_bins)
 
-    print(f'uniques: {uniques} \ncounts: {counts}')
-    percentage = dict(zip(uniques, counts * 100 / len(x_reals)))
-    print(f'full: {percentage}')
+    # percentage = dict(zip(uniques, counts * 100 / len(x_reals)))
+    # print(f'uniques_percentage: {percentage}')
 
     df_result = pd.DataFrame({
         "x_real": uniques,
@@ -239,7 +261,6 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     df_result_sorted = df_result.sort_values(by="f(x)", ascending=False)
     df_result_sorted.insert(0, "Lp.", np.arange(1, len(uniques) + 1))
 
-
     df_ag = pd.DataFrame({
         "fx_max": fx_maxs,
         "fx_avg": fx_avgs,
@@ -250,11 +271,11 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     ag_fig = px.line(df_ag,
                      x="pokolenie",
                      y=["fx_max", "fx_avg", "fx_min"],
-                     title="Wykres przebiegu f(x)_max, f(x)_min oraz f(x)_avg:",
+                     title="Wykres przebiegu f(x)_max, f(x)_min oraz f(x)_avg",
                      labels={"pokolenie": f'Pokolenia dla T={input_t}', "value": "Wartości f(x)"},
                      markers="true")
 
-    return generate_table(df, max_rows=n), a, b, n, ag_fig, generate_table(df_result_sorted, max_rows=len(uniques))
+    return generate_table(df, max_rows=n), a, b, n, ag_fig, results_table(df_result_sorted), ""
 
 
 if __name__ == '__main__':
