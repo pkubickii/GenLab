@@ -266,6 +266,7 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
 
     elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
 
+    # main loop:
     for i in range(input_t):
         fxs = [cmp.compute_fx(float(x)) for x in x_reals]
         gxs = sel.compute_gxs(fxs, min(fxs), d)
