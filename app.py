@@ -66,8 +66,15 @@ server = app.server
 app.title = 'GenLab'
 
 app.layout = html.Div(children=[
-    html.H1(children='Genetic Laboratory'),
-
+    html.Div([
+        html.H1(children='Genetic Laboratory', style={
+            'marginTop': '2rem',
+            'paddingBottom': '2rem',
+        }),
+    ], style={
+        'margin': 'auto',
+        'width': '90%',
+    }),
     html.Div([
         html.Div([
             html.Label('Początek przedziału:'),
@@ -151,10 +158,18 @@ app.layout = html.Div(children=[
         html.Div([
 
         ], id='population_table'),
-    ], id='div_toggle'),
+    ], id='div_toggle', style={
+        'margin': 'auto',
+        'width': '90%',
+    }),
 
     html.Br(),
-    dcc.Graph(id="ag_graph"),
+    html.Div([
+        dcc.Graph(id="ag_graph"),
+    ], style={
+        'margin': 'auto',
+        'width': '90%',
+    }),
     html.Br(),
 
     html.Div([], id="results_table", style={
