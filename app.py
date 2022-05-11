@@ -20,7 +20,7 @@ def generate_table(dataframe, max_rows=10):
             html.Tr([
                 html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
             ]) for i in range(min(len(dataframe), max_rows))
-        ], style={'font-family': 'Courier', 'white-space': 'pre'})
+        ], style={'fontFamily': 'Courier', 'whiteSpace': 'pre'})
     ])
 
 
@@ -62,11 +62,11 @@ app.layout = html.Div(children=[
         html.Div([
             html.Label('Koniec przedziału:'),
             dcc.Input(id='b_value', type='number', placeholder='wprowadź b', value=12),
-        ], style={'margin-left': '10px'}),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Ilość osobników:'),
             dcc.Input(id='n_value', type='number', min=1, max=1000, placeholder='wprowadź n', value=10),
-        ], style={'margin-left': '10px'}),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Dokładność:'),
             dcc.Dropdown(id='d_value',
@@ -78,35 +78,43 @@ app.layout = html.Div(children=[
                              {'label': '10^-6', 'value': (10 ** -6)},
                          ], value=(10 ** -3), clearable=False
                          ),
-        ], style={'margin-left': '10px'}),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('pk:'),
             dcc.Input(id='pk_value', type='number', min=0, max=1, placeholder='pk', value=0.75),
-        ], style={'margin-left': '10px'}),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('pm:'),
             dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.005),
-        ], style={'margin-left': '10px'}),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('elita:'),
             dcc.Checklist(id='elite_value',
                           options=[
                               {'label': 'włączona', 'value': 'on'},
                           ], value=['on'])
-        ], style={'margin-left': '10px'}),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('T:'),
             dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=100),
-        ], style={'margin-left': '10px'}),
-        html.Div([
-            html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
-                        style={'margin-left': '10px', 'margin-top': '23px'}),
-        ])
+        ], style={'marginLeft': '10px'}),
     ], style={
         'display': 'flex',
         'margin': 'auto',
         'width': '100%'
     }),
+
+    html.Br(),
+    html.Div([
+        html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
+                    style={
+                    })
+
+    ], style={
+        'textAlign': 'center',
+        'margin': 'auto',
+    }),
+
     html.Br(),
     html.Div([], id="error_msg"),
 
@@ -129,6 +137,16 @@ app.layout = html.Div(children=[
         'margin': 'auto',
         'width': '50%'
     }),
+    html.Br(),
+    html.Div([
+        html.Button(id='download_button', n_clicks=0, children='Pobierz przebieg populacji',
+                    style={
+                    })
+
+    ], style={
+        'textAlign': 'center',
+        'margin': 'auto',
+    })
 ])
 
 
