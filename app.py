@@ -32,14 +32,27 @@ def results_table(df):
             'marginBottom': '3rem',
             'fontSize': '1.8rem',
         },
+        style_cell={
+            'padding': '0.8rem',
+        },
         style_header={
             'fontWeight': 'bold',
             'fontSize': '2rem'
         },
+        style_header_conditional=[
+            {
+                'if': {'column_id': 'Lp.'},
+                'textAlign': 'left'
+            },
+        ],
         style_data_conditional=[
             {
                 'if': {'row_index': 'odd'},
-                'backgroundColor': 'rgb(210, 210, 210)',
+                'backgroundColor': 'rgb(210, 210, 210)'
+            },
+            {
+                'if': {'column_id': 'Lp.'},
+                'textAlign': 'left',
             }
         ]
     )
@@ -89,15 +102,16 @@ app.layout = html.Div(children=[
             dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.005),
         ], style={'marginLeft': '10px'}),
         html.Div([
-            html.Label('elita:'),
-            dcc.Checklist(id='elite_value',
-                          options=[
-                              {'label': 'włączona', 'value': 'on'},
-                          ], value=['on'])
+            daq.BooleanSwitch(
+                id="elite_value",
+                on=False,
+                label="elita:",
+                labelPosition='top'
+            )
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=10),
+            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=1),
         ], style={'marginLeft': '10px'}),
     ], style={
         'display': 'flex',
@@ -108,7 +122,10 @@ app.layout = html.Div(children=[
 
     html.Br(),
     html.Div([
-        html.Button(id='submit_button', n_clicks=0, children='Generuj populację')
+        html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
+                    style={
+                        'background': '#ABE2FB',
+                    }),
     ], style={
         'textAlign': 'center',
         'margin': 'auto',
@@ -118,10 +135,18 @@ app.layout = html.Div(children=[
     html.Div([], id="error_msg"),
 
     html.Br(),
-    daq.ToggleSwitch(
-        id='btn_toggle',
-        value=True
-    ),
+    html.Div([
+        daq.ToggleSwitch(
+            id='btn_toggle',
+            value=False,
+            label=["Pokaż tabelę", "Ukryj tabelę"],
+            style={'margin': "0", 'padding': "0"},
+        ),
+    ], style={
+        'width': '30%',
+        'margin': 'auto',
+    }),
+    html.Br(),
     html.Div([
         html.Div([
 
@@ -138,12 +163,16 @@ app.layout = html.Div(children=[
     }),
     html.Br(),
     html.Div([
-        html.Button(id='download_button', n_clicks=0, children='Pobierz przebieg populacji'),
+        html.Button(id='download_button', n_clicks=0, children='Pobierz przebieg populacji',
+                    style={
+                        'background': '#ABE2FB'
+                    }),
         dcc.Download(id="download_populations")
     ], style={
         'textAlign': 'center',
         'margin': 'auto',
-    })
+    }),
+    html.Br(),
 ])
 
 
@@ -169,9 +198,8 @@ def toggle_table(value):
               State('d_value', 'value'),
               State('pk_value', 'value'),
               State('pm_value', 'value'),
-              State('elite_value', 'value'),
-              State('t_value', 'value'),
-              prevent_initial_call=True)
+              State('elite_value', 'on'),
+              State('t_value', 'value'))
 def update_table(button_submit, button_download, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
         return no_update, input_a, input_b, input_n, no_update, no_update, no_update, \
@@ -243,7 +271,7 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
         mutation_indices_formatted = [f'{x}' for x in mutation_indices]
         pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
         x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
-        if input_elite is not None:
+        if input_elite is not False:
             fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
             elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
             x_reals_after_cross_mut = elite.inject(elite_memo, x_reals_after_cross_mut)
@@ -297,7 +325,7 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
     ag_fig = px.line(df_ag,
                      x="pokolenie",
                      y=["fx_max", "fx_avg", "fx_min"],
-                     title="Wykres przebiegu f(x)_max, f(x)_min oraz f(x)_avg",
+                     title="Wykres przebiegu f_max(x), f_min(x) oraz f_avg(x)",
                      labels={"pokolenie": f'Pokolenia dla T={input_t}', "value": "Wartości f(x)"},
                      markers="true")
 
