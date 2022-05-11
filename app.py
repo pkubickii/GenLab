@@ -1,3 +1,4 @@
+import dash
 from dash import Dash, html, dcc, dash_table, no_update
 import dash_daq as daq
 import plotly.express as px
@@ -58,7 +59,7 @@ app.layout = html.Div(children=[
         html.Div([
             html.Label('Początek przedziału:'),
             dcc.Input(id='a_value', type='number', placeholder='wprowadź a', value=-4),
-        ]),
+        ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Koniec przedziału:'),
             dcc.Input(id='b_value', type='number', placeholder='wprowadź b', value=12),
@@ -96,20 +97,18 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=100),
+            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=10),
         ], style={'marginLeft': '10px'}),
     ], style={
         'display': 'flex',
+        'flexWrap': 'wrap',
         'margin': 'auto',
-        'width': '100%'
+        'width': '90%',
     }),
 
     html.Br(),
     html.Div([
-        html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
-                    style={
-                    })
-
+        html.Button(id='submit_button', n_clicks=0, children='Generuj populację')
     ], style={
         'textAlign': 'center',
         'margin': 'auto',
@@ -139,10 +138,8 @@ app.layout = html.Div(children=[
     }),
     html.Br(),
     html.Div([
-        html.Button(id='download_button', n_clicks=0, children='Pobierz przebieg populacji',
-                    style={
-                    })
-
+        html.Button(id='download_button', n_clicks=0, children='Pobierz przebieg populacji'),
+        dcc.Download(id="download_populations")
     ], style={
         'textAlign': 'center',
         'margin': 'auto',
@@ -162,8 +159,10 @@ def toggle_table(value):
               Output('n_value', 'value'),
               Output('ag_graph', 'figure'),
               Output('results_table', 'children'),
+              Output('download_populations', 'data'),
               Output('error_msg', 'children'),
               Input('submit_button', 'n_clicks'),
+              Input('download_button', 'n_clicks'),
               State('a_value', 'value'),
               State('b_value', 'value'),
               State('n_value', 'value'),
@@ -171,18 +170,19 @@ def toggle_table(value):
               State('pk_value', 'value'),
               State('pm_value', 'value'),
               State('elite_value', 'value'),
-              State('t_value', 'value'))
-def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
+              State('t_value', 'value'),
+              prevent_initial_call=True)
+def update_table(button_submit, button_download, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
-        return no_update, input_a, input_b, input_n, no_update, no_update, \
+        return no_update, input_a, input_b, input_n, no_update, no_update, no_update, \
                html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
                         style={'color': 'red'})
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
-        return no_update, input_a, input_b, input_n, no_update, no_update, html.Div(
+        return no_update, input_a, input_b, input_n, no_update, no_update, no_update, html.Div(
             "Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
             style={'color': 'red'})
     elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
-        return no_update, input_a, input_b, input_n, no_update, html.Div(
+        return no_update, input_a, input_b, input_n, no_update, no_update, no_update, html.Div(
             "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
             style={'color': 'red'})
 
@@ -192,6 +192,8 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     else:
         a = int(np.ma.round(input_a))
         b = int(np.ma.round(input_b))
+
+    ctx = dash.callback_context
 
     n = int(np.ma.round(input_n))
     d = input_d
@@ -215,7 +217,12 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     fx_mins = []
     fx_avgs = []
 
+    population_txt = ""
+    nl = '\n'
+    tab = '\t'
+
     elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
+
     # main loop:
     for i in range(input_t):
         fxs = [cmp.compute_fx(float(x)) for x in x_reals]
@@ -246,6 +253,11 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
         fx_maxs.append(np.max(fxs_cross_mutation))
         fx_avgs.append(np.average(fxs_cross_mutation))
         fx_mins.append(np.min(fxs_cross_mutation))
+        results_zip = [item for item in zip(x_reals, fxs_cross_mutation)]
+        population_txt += f'Populacja numer {i+1}{nl}'
+        population_txt += f'Lp.{tab} x{tab}{tab}{tab}f(x){nl}'
+        for k in range(n):
+            population_txt += f'{k+1}{tab}{results_zip[k][0]}{tab}{tab}{results_zip[k][-1]}{nl}'
 
     df = pd.DataFrame({
         "Lp.": np.arange(1, n + 1),
@@ -266,16 +278,12 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
     uni_bins = [cmp.compute_x_bin(x, length) for x in uni_ints]
     uni_fxs = [cmp.compute_fx(float(x)) for x in uniques]
 
-    # percentage = dict(zip(uniques, counts * 100 / len(x_reals)))
-    # print(f'uniques_percentage: {percentage}')
-
     df_result = pd.DataFrame({
         "x_real": uniques,
         "x_bin": uni_bins,
         "f(x)": uni_fxs,
         "percentage": [f'{float(count) / len(x_reals):.0%}' for count in counts],
     })
-
     df_result_sorted = df_result.sort_values(by="f(x)", ascending=False)
     df_result_sorted.insert(0, "Lp.", np.arange(1, len(uniques) + 1))
 
@@ -293,7 +301,27 @@ def update_table(n_clicks, input_a, input_b, input_n, input_d, input_pk, input_p
                      labels={"pokolenie": f'Pokolenia dla T={input_t}', "value": "Wartości f(x)"},
                      markers="true")
 
-    return generate_table(df, max_rows=n), a, b, n, ag_fig, results_table(df_result_sorted), ""
+    if not ctx.triggered:
+        button_id = 'No clicks yet'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == 'download_button':
+        return \
+            generate_table(df, max_rows=n), \
+            a, b, n, \
+            ag_fig, \
+            results_table(df_result_sorted), \
+            dict(content=population_txt, filename="population.txt"), \
+            ""
+
+    return \
+        generate_table(df, max_rows=n), \
+        a, b, n, \
+        ag_fig, \
+        results_table(df_result_sorted), \
+        no_update, \
+        ""
 
 
 if __name__ == '__main__':
