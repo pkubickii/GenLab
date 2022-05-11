@@ -86,7 +86,7 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Ilość osobników:'),
-            dcc.Input(id='n_value', type='number', min=1, max=1000, placeholder='wprowadź n', value=10),
+            dcc.Input(id='n_value', type='number', min=1, max=200, placeholder='wprowadź n', value=10),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Dokładność:'),
@@ -118,7 +118,7 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=10000000, placeholder='T', value=1),
+            dcc.Input(id='t_value', type='number', min=1, max=200, placeholder='T', value=1),
         ], style={'marginLeft': '10px'}),
     ], style={
         'display': 'flex',
@@ -218,7 +218,7 @@ def toggle_table(value):
 def update_table(button_submit, button_download, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
         return no_update, input_a, input_b, input_n, no_update, no_update, no_update, \
-               html.Div("Pola wypełniamy wartościami numerycznymi, wartość n w przedziale: [1:100]",
+               html.Div("Pola wypełniamy wartościami numerycznymi, pk i pm [0:1], N i T [1:200]",
                         style={'color': 'red'})
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
         return no_update, input_a, input_b, input_n, no_update, no_update, no_update, html.Div(
