@@ -273,7 +273,6 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
         qxs = sel.compute_qxs(pxs)
         rs = sel.compute_r(n)
         sel_reals = sel.get_new_population(rs, qxs, x_reals)
-        sel_fxs = [cmp.compute_fx(float(x)) for x in sel_reals]
         sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
         sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
         parent_bins = cross.get_parents(sel_bins, pk)
