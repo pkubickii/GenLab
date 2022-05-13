@@ -1,27 +1,27 @@
-import pandas
 import compute as cmp
 import selection as sel
 import numpy as np
+import pandas as pd
 import crossover as cross
 import mutation as mut
 import elite
+from multiprocessing import Pool, freeze_support
+import timeit
+from horology import timed
 
 
-if __name__ == '__main__':
+def run_multiprocessing(func, i, n_proc):
+    with Pool(processes=n_proc) as pool:
+        return pool.map(func, i)
+
+
+@timed
+def test_func(n_values, pk_values, pm_values, t_values):
 
     a = -4
     b = 12
     d = 10 ** -3
-    length = cmp.compute_length(a, b, d)
-    # test values:
-    # n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
-    # pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
-    # pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
-    # t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
-    n_values = [30, 35]
-    pk_values = [0.5, 0.55]
-    pm_values = [0.0001, 0.01]
-    t_values = [50, 60]
+    length = 14
 
     ns = []
     pks = []
@@ -34,23 +34,11 @@ if __name__ == '__main__':
         for pk in range(len(pk_values)):
             for pm in range(len(pm_values)):
                 for t in range(len(t_values)):
-                    x_reals = cmp.add_precision(cmp.generate_population(a, b, n_values[n]), d)
-                    sel_reals = []
-                    sel_bins = []
-                    parent_bins = []
-                    cross_points = []
-                    children_w_cp = []
-                    pop_after_cross = []
-                    mutation_indices_formatted = []
-                    pop_after_mut = []
-                    x_reals_after_cross_mut = []
-                    fxs_cross_mutation = []
-
-                    elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
                     fxmax_100 = []
                     fxavg_100 = []
-
                     for omg in range(10):
+                        x_reals = cmp.add_precision(cmp.generate_population(a, b, n_values[n]), d)
+                        elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
                         for i in range(t_values[t]):
                             fxs = [cmp.compute_fx(float(x)) for x in x_reals]
                             gxs = sel.compute_gxs(fxs, min(fxs), d)
@@ -63,12 +51,12 @@ if __name__ == '__main__':
                             parent_bins = cross.get_parents(sel_bins, pk_values[pk])
                             cross_points = cross.get_cross_points(parent_bins, length)
                             children_bins = cross.get_children(parent_bins, cross_points)
-                            children_w_cp = cross.get_children_w_cp(children_bins, cross_points)
                             pop_after_cross = cross.get_pop_after_cross(children_bins, sel_bins)
-                            mutation_indices = [mut.get_mutation_indices(length, pm_values[pm]) for _ in range(n_values[n])]
-                            mutation_indices_formatted = [f'{x}' for x in mutation_indices]
+                            mutation_indices = [mut.get_mutation_indices(length, pm_values[pm]) for _ in
+                                                range(n_values[n])]
                             pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
-                            x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
+                            x_reals_after_cross_mut = cmp.add_precision(
+                                cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
                             fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
                             elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
                             x_reals_after_cross_mut = elite.inject(elite_memo, x_reals_after_cross_mut)
@@ -85,8 +73,30 @@ if __name__ == '__main__':
                     favgs.append(np.average(fxavg_100))
                     print(f'N: {n_values[n]} pk: {pk_values[pk]} pm: {pm_values[pm]} T: {t_values[t]} '
                           f'fmax: {fmaxs[-1]} favg: {favgs[-1]}')
+    return ns, pks, pms, ts, fmaxs, favgs
 
-    rdf = pandas.DataFrame({
+
+if __name__ == '__main__':
+    start = timeit.default_timer()
+    # test values:
+    # n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
+    # pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
+    # pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
+    # t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
+
+    n_values = [30, 35]
+    pk_values = [0.5, 0.55]
+    pm_values = [0.0001, 0.0005]
+    t_values = [50, 60]
+
+    # multiprocessing parameters:
+    n_processors = 6
+
+    ns, pks, pms, ts, fmaxs, favgs = test_func(n_values, pk_values, pm_values, t_values)
+
+    stop = timeit.default_timer()
+    print(f'Timeit: {stop - start}')
+    rdf = pd.DataFrame({
         "n": ns,
         "pk": pks,
         "pm": pms,
@@ -96,4 +106,6 @@ if __name__ == '__main__':
     })
     rdf.index = range(1, rdf.shape[0] + 1)
     rdf.to_csv('results_save.csv', index_label="lp")
-    print("FINITO")
+    file = open("time.txt", "w")
+    file.write(str(test_func.interval))
+    file.close()
