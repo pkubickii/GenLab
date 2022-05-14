@@ -5,14 +5,8 @@ import pandas as pd
 import crossover as cross
 import mutation as mut
 import elite
-from multiprocessing import Pool, freeze_support
 import timeit
 from horology import timed
-
-
-def run_multiprocessing(func, i, n_proc):
-    with Pool(processes=n_proc) as pool:
-        return pool.map(func, i)
 
 
 @timed
@@ -88,9 +82,6 @@ if __name__ == '__main__':
     pk_values = [0.5, 0.55]
     pm_values = [0.0001, 0.0005]
     t_values = [50, 60]
-
-    # multiprocessing parameters:
-    n_processors = 6
 
     ns, pks, pms, ts, fmaxs, favgs = test_func(n_values, pk_values, pm_values, t_values)
 

@@ -7,7 +7,6 @@ import mutation as mut
 import elite
 from multiprocessing import Pool, freeze_support
 import timeit
-from horology import timed
 import itertools
 
 
@@ -16,7 +15,6 @@ def run_multiprocessing(func, i, n_proc):
         return pool.map(func, i)
 
 
-@timed
 def test_func(params):
     n_value = params[0]
     pk_value = params[1]
@@ -28,16 +26,10 @@ def test_func(params):
     d = 10 ** -3
     length = 14
 
-    ns = []
-    pks = []
-    pms = []
-    ts = []
-    fmaxs = []
-    favgs = []
-
+    x_reals_after_cross_mut = []
     fxmax_100 = []
     fxavg_100 = []
-    for omg in range(10):
+    for omg in range(100):
         x_reals = cmp.add_precision(cmp.generate_population(a, b, n_value), d)
         elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
         for i in range(t_value):
@@ -66,15 +58,11 @@ def test_func(params):
         fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
         fxmax_100.append(np.max(fxs_cross_mutation))
         fxavg_100.append(np.average(fxs_cross_mutation))
-    ns.append(n_value)
-    pks.append(pk_value)
-    pms.append(pm_value)
-    ts.append(t_value)
-    fmaxs.append(np.average(fxmax_100))
-    favgs.append(np.average(fxavg_100))
+    fmaxs = np.average(fxmax_100)
+    favgs = np.average(fxavg_100)
     print(f'N: {n_value} pk: {pk_value} pm: {pm_value} T: {t_value} '
-          f'fmax: {fmaxs[-1]} favg: {favgs[-1]}')
-    return ns, pks, pms, ts, fmaxs, favgs
+          f'fmax: {fmaxs} favg: {favgs}')
+    return n_value, pk_value, pm_value, t_value, fmaxs, favgs
 
 
 if __name__ == '__main__':
@@ -86,10 +74,10 @@ if __name__ == '__main__':
     # pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
     # t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
 
-    n_values = [30, 35]
-    pk_values = [0.5, 0.55]
-    pm_values = [0.0001, 0.0005]
-    t_values = [50, 60]
+    n_values = [30, 35, 40]
+    pk_values = [0.5, 0.55, 0.6]
+    pm_values = [0.0001, 0.0005, 0.001]
+    t_values = [50, 60, 70]
     params = n_values, pk_values, pm_values, t_values
     # multiprocessing parameters:
     n_processors = 6
@@ -98,17 +86,11 @@ if __name__ == '__main__':
     result = run_multiprocessing(test_func, paramlist, n_processors)
 
     stop = timeit.default_timer()
-    print(f'Timeit: {stop - start}')
-    rdf = pd.DataFrame({
-        "n": result[0],
-        "pk": result[1],
-        "pm": result[2],
-        "t": result[3],
-        "fmax": result[4],
-        "favg": result[5]
-    })
+    the_time = stop - start
+    print(f'Timeit: {the_time}')
+    rdf = pd.DataFrame.from_records(result)
     rdf.index = range(1, rdf.shape[0] + 1)
-    rdf.to_csv('results_save.csv', index_label="lp")
+    rdf.to_csv('results_save.csv', index_label="lp", header=["n", "pk", "pm", "t", "fmax", "favg"])
     file = open("time.txt", "w")
-    file.write(str(stop - start))
+    file.write(str(the_time))
     file.close()
