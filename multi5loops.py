@@ -63,17 +63,12 @@ if __name__ == '__main__':
     freeze_support()
     start = timeit.default_timer()
     # test values:
-    # n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
-    # pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
-    # pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
-    # t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
-
-    n_values = [30, 35, 40]
-    pk_values = [0.5, 0.55, 0.6]
-    pm_values = [0.0001, 0.0005, 0.001]
-    t_values = [50, 60, 70]
+    n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
+    pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
+    pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
+    t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
     i_values = range(0, 100)
-    params = n_values, pk_values, pm_values, t_values
+
     # multiprocessing parameters:
     n_processors = 6
     paramlist = list(itertools.product(n_values, pk_values, pm_values, t_values, i_values))
@@ -85,13 +80,13 @@ if __name__ == '__main__':
     print(f'Timeit: {the_time}')
     pd_start = timeit.default_timer()
     rdf = pd.DataFrame.from_records(result)
-    rdf.index = range(1, rdf.shape[0] + 1)
-    rdf.to_csv('results_save.csv', index_label="lp", header=["n", "pk", "pm", "t", "fmax", "favg"])
     rdf_new = rdf.groupby([0, 1, 2, 3])[[4, 5]].agg(np.average)
     rdf_new = rdf_new.reset_index()
     rdf_new.columns = ["n", "pk", "pm", "t", "fmax", "favg"]
     rdf_new.index = range(1, rdf_new.shape[0] + 1)
     rdf_new.to_csv('res_agg.csv', index_label="lp")
+    rdf.index = range(1, rdf.shape[0] + 1)
+    rdf.to_csv('results_save.csv', index_label="lp", header=["n", "pk", "pm", "t", "fmax", "favg"])
     pd_stop = timeit.default_timer()
     pd_time = pd_stop - pd_start
     print(f'Pandas time: {pd_time}')

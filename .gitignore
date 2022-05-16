@@ -142,3 +142,7 @@ cython_debug/
 # .idea
 .idea/
 
+pandas_time.txt
+res_agg.csv
+results_save.csv
+time.txt
