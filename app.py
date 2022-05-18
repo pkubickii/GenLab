@@ -131,7 +131,7 @@ app.layout = html.Div(children=[
 
     html.Br(),
     html.Div([
-        html.Button(id='submit_button', n_clicks=0, children='Start Algorytmu Genetycznego',
+        html.Button(id='submit_button', n_clicks=0, children='Uruchom Algorytm Genetyczny',
                     style={
                         'background': '#ABE2FB',
                     }),
