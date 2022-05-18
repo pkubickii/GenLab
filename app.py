@@ -9,6 +9,8 @@ import selection as sel
 import crossover as cross
 import mutation as mut
 import elite
+import test
+import bestparams as bp
 from dash.dependencies import Input, Output, State
 
 
@@ -86,7 +88,7 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Ilość osobników:'),
-            dcc.Input(id='n_value', type='number', min=1, max=200, placeholder='wprowadź n', value=10),
+            dcc.Input(id='n_value', type='number', min=1, max=200, placeholder='wprowadź n', value=70),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Dokładność:'),
@@ -102,23 +104,23 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('pk:'),
-            dcc.Input(id='pk_value', type='number', min=0, max=1, placeholder='pk', value=0.75),
+            dcc.Input(id='pk_value', type='number', min=0, max=1, placeholder='pk', value=0.9),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('pm:'),
-            dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.005),
+            dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.0001),
         ], style={'marginLeft': '10px'}),
         html.Div([
             daq.BooleanSwitch(
                 id="elite_value",
-                on=False,
+                on=True,
                 label="elita:",
                 labelPosition='top'
             )
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=200, placeholder='T', value=1),
+            dcc.Input(id='t_value', type='number', min=1, max=200, placeholder='T', value=140),
         ], style={'marginLeft': '10px'}),
     ], style={
         'display': 'flex',
@@ -129,7 +131,7 @@ app.layout = html.Div(children=[
 
     html.Br(),
     html.Div([
-        html.Button(id='submit_button', n_clicks=0, children='Generuj populację',
+        html.Button(id='submit_button', n_clicks=0, children='Start Algorytmu Genetycznego',
                     style={
                         'background': '#ABE2FB',
                     }),
@@ -145,7 +147,7 @@ app.layout = html.Div(children=[
     html.Div([
         daq.ToggleSwitch(
             id='btn_toggle',
-            value=False,
+            value=True,
             label=["Pokaż tabelę", "Ukryj tabelę"],
             style={'margin': "0", 'padding': "0"},
         ),
@@ -188,7 +190,43 @@ app.layout = html.Div(children=[
         'margin': 'auto',
     }),
     html.Br(),
+    html.Div([
+        html.Button(id='start_test_button', n_clicks=0, children='Przeprowadź testy Algorytmu Genetycznego',
+                    style={
+                        'background': '#ABE2FB'
+                    }),
+        html.Br(),
+        html.Br(),
+        dcc.Loading(children=[
+            html.Div([], id="div_test_results", style={
+                'margin': 'auto',
+                'width': '50%'
+            }),
+            # html.Button(id='top10_button', n_clicks=0, children='Pobierz top10 konfiguracji parametrów'),
+            dcc.Download(id="download_top10"),
+            ], style={'position': 'relative', 'display': 'flex', 'justify-content': 'center'}),
+    ], style={
+        'textAlign': 'center',
+        'margin': 'auto',
+    }),
+    html.Br(),
 ])
+
+
+@app.callback(Output('div_test_results', 'children'),
+              Output('download_top10', 'data'),
+              Input('start_test_button', 'n_clicks'),
+              prevent_initial_call=True)
+def start_test(start_test):
+    rdf = test.mini_test()
+    top10df = bp.top10_from_df(rdf)
+    top10df.reset_index()
+    top10df.index = range(1, top10df.shape[0] + 1)
+    top10csv = top10df.to_csv(index_label="lp")
+    top10df.insert(0, "Lp.", np.arange(1, top10df.shape[0] + 1))
+    down_data = dict(content=top10csv, filename="top10.csv")
+
+    return results_table(top10df), down_data
 
 
 @app.callback(Output('div_toggle', 'hidden'),

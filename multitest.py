@@ -8,6 +8,7 @@ import elite
 from multiprocessing import Pool, freeze_support
 import timeit
 import itertools
+import psutil
 
 
 def run_multiprocessing(func, i, n_proc):
@@ -69,18 +70,14 @@ if __name__ == '__main__':
     freeze_support()
     start = timeit.default_timer()
     # test values:
-    # n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
-    # pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
-    # pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
-    # t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
+    n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
+    pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
+    pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
+    t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
 
-    n_values = [30, 35, 40]
-    pk_values = [0.5, 0.55, 0.6]
-    pm_values = [0.0001, 0.0005, 0.001]
-    t_values = [50, 60, 70]
-    params = n_values, pk_values, pm_values, t_values
     # multiprocessing parameters:
-    n_processors = 6
+    n_processors = psutil.cpu_count(logical=False)
+    print(f'Starting on {n_processors} processors.')
     paramlist = list(itertools.product(n_values, pk_values, pm_values, t_values))
 
     result = run_multiprocessing(test_func, paramlist, n_processors)
@@ -90,7 +87,7 @@ if __name__ == '__main__':
     print(f'Timeit: {the_time}')
     rdf = pd.DataFrame.from_records(result)
     rdf.index = range(1, rdf.shape[0] + 1)
-    rdf.to_csv('results_save.csv', index_label="lp", header=["n", "pk", "pm", "t", "fmax", "favg"])
-    file = open("time.txt", "w")
+    rdf.to_csv('/results/results_save.csv', index_label="lp", header=["n", "pk", "pm", "t", "fmax", "favg"])
+    file = open("results/times/time.txt", "w")
     file.write(str(the_time))
     file.close()

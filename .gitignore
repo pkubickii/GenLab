@@ -142,7 +142,7 @@ cython_debug/
 # .idea
 .idea/
 
-pandas_time.txt
-res_agg.csv
-results_save.csv
-time.txt
+results/times/pandas_time.txt
+results/res_agg.csv
+results/results_save.csv
+results/times/time.txt

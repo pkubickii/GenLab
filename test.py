@@ -5,7 +5,6 @@ import pandas as pd
 import crossover as cross
 import mutation as mut
 import elite
-import timeit
 from horology import timed
 
 
@@ -70,23 +69,20 @@ def test_func(n_values, pk_values, pm_values, t_values):
     return ns, pks, pms, ts, fmaxs, favgs
 
 
-if __name__ == '__main__':
-    start = timeit.default_timer()
+def mini_test():
     # test values:
     # n_values = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
     # pk_values = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]
     # pm_values = [0.0001, 0.0005, 0.001, 0.005, 0.01]
     # t_values = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
 
-    n_values = [30, 35]
-    pk_values = [0.5, 0.55]
-    pm_values = [0.0001, 0.0005]
-    t_values = [50, 60]
+    n_values = [30, 80]
+    pk_values = [0.5, 0.85]
+    pm_values = [0.0001, 0.005]
+    t_values = [50, 100]
 
     ns, pks, pms, ts, fmaxs, favgs = test_func(n_values, pk_values, pm_values, t_values)
 
-    stop = timeit.default_timer()
-    print(f'Timeit: {stop - start}')
     rdf = pd.DataFrame({
         "n": ns,
         "pk": pks,
@@ -96,7 +92,10 @@ if __name__ == '__main__':
         "favg": favgs
     })
     rdf.index = range(1, rdf.shape[0] + 1)
-    rdf.to_csv('results_save.csv', index_label="lp")
-    file = open("time.txt", "w")
-    file.write(str(test_func.interval))
+    rdf.to_csv('results/mini_test.csv', index_label="lp")
+    file = open("results/times/time_mini.txt", "w")
+    time_mini = str(test_func.interval)
+    print(time_mini)
+    file.write(time_mini)
     file.close()
+    return rdf

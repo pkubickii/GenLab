@@ -8,6 +8,7 @@ import elite
 from multiprocessing import Pool, freeze_support
 import timeit
 import itertools
+import psutil
 
 
 def run_multiprocessing(func, i, n_proc):
@@ -70,7 +71,8 @@ if __name__ == '__main__':
     i_values = range(0, 100)
 
     # multiprocessing parameters:
-    n_processors = 6
+    n_processors = psutil.cpu_count(logical=False)
+    print(f'Starting on {n_processors} processors.')
     paramlist = list(itertools.product(n_values, pk_values, pm_values, t_values, i_values))
 
     result = run_multiprocessing(test_func, paramlist, n_processors)
@@ -90,9 +92,9 @@ if __name__ == '__main__':
     pd_stop = timeit.default_timer()
     pd_time = pd_stop - pd_start
     print(f'Pandas time: {pd_time}')
-    file = open("time.txt", "w")
+    file = open("results/times/time.txt", "w")
     file.write(str(the_time))
     file.close()
-    file = open("pandas_time.txt", "w")
+    file = open("results/times/pandas_time.txt", "w")
     file.write(str(pd_time))
     file.close()
