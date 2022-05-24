@@ -63,7 +63,7 @@ def vbs_best_in_t(vbs_fx):
 
 def geo(params):
     tau = params[0]
-    time_t = 300
+    time_t = 500
 
     a = - 4
     b = 12
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     freeze_support()
     start = timeit.default_timer()
     taus = np.around(np.arange(0.5, 3.1, 0.1), 1)
-    tests = np.arange(1000)
+    tests = np.arange(2000)
 
     n_proc = psutil.cpu_count(logical=False)
     print(f'Starting on {n_proc} processors.')
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     rdf.columns = ["tau", "fxs"]
     rdf = rdf.groupby(by="tau").agg({"fxs": [np.average]})
     rdf.columns = rdf.columns.droplevel(1)
-    rdf.to_csv('./results/geotest_1000_300.csv', index_label="tau")
+    rdf.to_csv('./results/geotest_2000_500.csv', index_label="tau")
     file = open("./results/times/geotime.txt", "w")
     file.write(str(stop-start))
     file.close()

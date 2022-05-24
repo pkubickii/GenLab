@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from dash import Dash, html, dcc, Input, Output, State, callback
+from dash import Dash, html, dcc, Input, Output, State, callback, no_update
 import utils.compute as cmp
 import pandas as pd
 import numpy as np
@@ -124,7 +124,7 @@ form = dbc.Form(
                         dbc.InputGroup([
                             dbc.InputGroupText("T:"),
                             dbc.Input(id='t_value', type='number', min=1,
-                                      max=5000, placeholder='T', value=200),
+                                      max=5000, placeholder='T', value=300),
                         ], className='me-3'),
                         ], width=2),
                 dbc.Col([
@@ -141,6 +141,17 @@ layout = html.Div(
             html.H1("Generalized Extremal Optimization",
                     className='m-1 mb-3'),
             form,
+            html.Div([], id='geo_error_msg'),
+            html.Div([], id='download_button', style={'display': 'none'}),
+            html.Div([], id='population_table', style={'display': 'none'}),
+            html.Div([], id='n_value', style={'display': 'none'}),
+            html.Div([], id='ag_graph', style={'display': 'none'}),
+            html.Div([], id='error_msg', style={'display': 'none'}),
+            html.Div([], id='pk_value', style={'display': 'none'}),
+            html.Div([], id='pm_value', style={'display': 'none'}),
+            html.Div([], id='elite_value', style={'display': 'none'}),
+            html.Div([], id='generate_table', style={'display': 'none'}),
+            html.Div([], id='download_populations', style={'display': 'none'}),
             html.Br(),
         ], style={
             'margin': 'auto',
@@ -155,11 +166,18 @@ layout = html.Div(
                     ], id='result_best', className="fs-5 font-monospace")
                 ]),
                 html.Br(),
-                dbc.Button("Wynik testów", id="test_button", outline=True, color="success",
-                           size="lg", n_clicks=0),
+                html.Div([
+                    dbc.Button("Wynik testów", id="test_button", outline=True, color="success",
+                               size="lg", n_clicks=0),
+                ], style={
+                    'textAlign': 'center'
+                }),
                 html.Br(),
                 html.Br(),
                 html.Div([], id="test_graph"),
+                html.Br(),
+                html.Br(),
+                html.Br(),
             ], style={
                 'margin': 'auto',
                 'width': '90%',
@@ -173,18 +191,18 @@ layout = html.Div(
           Input('test_button', 'n_clicks'),
           prevent_initial_call=True)
 def test_button(button_click):
-    df = pd.read_csv(
-        "~/PycharmProjects/GenLab/app/results/geotest_1000_300.csv")
+    df = pd.read_csv("app/pages/assets/geo/geotest_2000_500.csv")
     test_fig = px.line(df,
                        x="tau",
                        y="fxs",
-                       title="Wykres fx_avg(vb) dla różnych tau",
+                       title="Wykres fx_avg(vb) dla różnych tau przy T = 300 oraz ilości prób = 2000 na jedną wartość tau",
                        markers="true")
     return dcc.Graph(id="test_graph", figure=test_fig)
 
 
 @callback(Output('result_best', 'children'),
           Output('result_fig', 'figure'),
+          Output('geo_error_msg', 'children'),
           Input('submit_button', 'n_clicks'),
           State('a_value', 'value'),
           State('b_value', 'value'),
@@ -193,6 +211,16 @@ def test_button(button_click):
           State('t_value', 'value'),
           prevent_initial_call=True)
 def get_table(n_clicks, input_a, input_b, input_d, input_tau, input_t):
+    if None in [input_a, input_b, input_d, input_tau, input_t]:
+        return no_update, no_update, html.Div(
+            "Pola wypełniamy wartościami numerycznymi.", style={'color': 'red'})
+    elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
+        return no_update, no_update, html.Div(
+            "Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.", style={'color': 'red'})
+    elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
+        return no_update, no_update, html.Div(
+            "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
+            style={'color': 'red'})
     if input_a > input_b:
         a = int(np.ma.round(input_b))
         b = int(np.ma.round(input_a))
@@ -239,4 +267,4 @@ def get_table(n_clicks, input_a, input_b, input_d, input_tau, input_t):
     df.index = np.arange(0, time_t)
     df = df.truncate(after=0)
     df = df.drop(columns=["fx_best_in_t"])
-    return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), geo_fig
+    return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), geo_fig, ""

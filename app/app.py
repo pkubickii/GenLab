@@ -19,6 +19,7 @@ navbar = dbc.NavbarSimple(
         ],
         nav=True,
         label="Nawigacja",
+        className="fs-5"
     ),
     brand="ISA LAB",
     color="primary",
