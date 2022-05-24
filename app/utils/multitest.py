@@ -1,10 +1,10 @@
-import compute as cmp
-import selection as sel
+from utils import compute as cmp
+from utils import selection as sel
 import numpy as np
 import pandas as pd
-import crossover as cross
-import mutation as mut
-import elite
+from utils import crossover as cross
+from utils import mutation as mut
+from utils import elite
 from multiprocessing import Pool, freeze_support
 import timeit
 import itertools

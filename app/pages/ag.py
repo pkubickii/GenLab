@@ -1,21 +1,22 @@
 import dash
-from dash import Dash, html, dcc, dash_table, no_update
+from dash import Dash, html, dcc, dash_table, no_update, callback
 import dash_daq as daq
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import compute as cmp
-import selection as sel
-import crossover as cross
-import mutation as mut
-import elite
-import test
-import bestparams as bp
+import utils.selection as sel
+import utils.crossover as cross
+import utils.mutation as mut
+import utils.elite as elite
+import utils.test as test
+import utils.bestparams as bp
+import utils.compute as cmp
 from dash.dependencies import Input, Output, State
+import dash_bootstrap_components as dbc
 
 
 def generate_table(dataframe, max_rows=10):
-    return html.Table([
+    return dbc.Table([
         html.Thead(
             html.Tr([html.Th(col) for col in dataframe.columns])
         ),
@@ -23,53 +24,15 @@ def generate_table(dataframe, max_rows=10):
             html.Tr([
                 html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
             ]) for i in range(min(len(dataframe), max_rows))
-        ], style={'fontFamily': 'Courier', 'whiteSpace': 'pre'})
-    ])
-
-
-def results_table(df):
-    return dash_table.DataTable(
-        data=df.to_dict("records"),
-        style_table={
-            'marginBottom': '3rem',
-            'fontSize': '1.8rem',
-        },
-        style_cell={
-            'padding': '0.8rem',
-        },
-        style_header={
-            'fontWeight': 'bold',
-            'fontSize': '2rem'
-        },
-        style_header_conditional=[
-            {
-                'if': {'column_id': 'Lp.'},
-                'textAlign': 'left'
-            },
-        ],
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},
-                'backgroundColor': 'rgb(210, 210, 210)'
-            },
-            {
-                'if': {'column_id': 'Lp.'},
-                'textAlign': 'left',
-            }
-        ]
+        ]),
+    ],
+        color="primary"
     )
 
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-app = Dash(__name__, external_stylesheets=external_stylesheets)
-
-server = app.server
-app.title = 'GenLab'
-
-app.layout = html.Div(children=[
+layout = html.Div(children=[
     html.Div([
-        html.H1(children='Genetic Laboratory', style={
+        html.H1(children='Algorytm Genetyczny', style={
             'marginTop': '2rem',
             'paddingBottom': '2rem',
         }),
@@ -80,15 +43,18 @@ app.layout = html.Div(children=[
     html.Div([
         html.Div([
             html.Label('Początek przedziału:'),
-            dcc.Input(id='a_value', type='number', placeholder='wprowadź a', value=-4),
+            dcc.Input(id='a_value', type='number',
+                      placeholder='wprowadź a', value=-4),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Koniec przedziału:'),
-            dcc.Input(id='b_value', type='number', placeholder='wprowadź b', value=12),
+            dcc.Input(id='b_value', type='number',
+                      placeholder='wprowadź b', value=12),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Ilość osobników:'),
-            dcc.Input(id='n_value', type='number', min=1, max=200, placeholder='wprowadź n', value=70),
+            dcc.Input(id='n_value', type='number', min=1, max=200,
+                      placeholder='wprowadź n', value=70),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('Dokładność:'),
@@ -104,11 +70,13 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('pk:'),
-            dcc.Input(id='pk_value', type='number', min=0, max=1, placeholder='pk', value=0.9),
+            dcc.Input(id='pk_value', type='number', min=0,
+                      max=1, placeholder='pk', value=0.9),
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('pm:'),
-            dcc.Input(id='pm_value', type='number', min=0, max=1, placeholder='pm', value=0.0001),
+            dcc.Input(id='pm_value', type='number', min=0,
+                      max=1, placeholder='pm', value=0.0001),
         ], style={'marginLeft': '10px'}),
         html.Div([
             daq.BooleanSwitch(
@@ -120,7 +88,8 @@ app.layout = html.Div(children=[
         ], style={'marginLeft': '10px'}),
         html.Div([
             html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1, max=200, placeholder='T', value=140),
+            dcc.Input(id='t_value', type='number', min=1,
+                      max=200, placeholder='T', value=140),
         ], style={'marginLeft': '10px'}),
     ], style={
         'display': 'flex',
@@ -131,10 +100,8 @@ app.layout = html.Div(children=[
 
     html.Br(),
     html.Div([
-        html.Button(id='submit_button', n_clicks=0, children='Uruchom Algorytm Genetyczny',
-                    style={
-                        'background': '#ABE2FB',
-                    }),
+        dbc.Button("Uruchom Algorytm Genetyczny", outline=True,
+                   color="danger", size="lg", id='submit_button', n_clicks=0),
     ], style={
         'textAlign': 'center',
         'margin': 'auto',
@@ -174,16 +141,14 @@ app.layout = html.Div(children=[
     }),
     html.Br(),
 
-    html.Div([], id="results_table", style={
+    html.Div([], id="generate_table", style={
         'margin': 'auto',
-        'width': '50%'
+        'width': '50%',
     }),
     html.Br(),
     html.Div([
-        html.Button(id='download_button', n_clicks=0, children='Pobierz przebieg populacji',
-                    style={
-                        'background': '#ABE2FB'
-                    }),
+        dbc.Button("Pobierz przebieg populacji", outline=True,
+                   color="info", id='download_button', n_clicks=0),
         dcc.Download(id="download_populations")
     ], style={
         'textAlign': 'center',
@@ -191,10 +156,8 @@ app.layout = html.Div(children=[
     }),
     html.Br(),
     html.Div([
-        html.Button(id='start_test_button', n_clicks=0, children='Przeprowadź testy Algorytmu Genetycznego',
-                    style={
-                        'background': '#ABE2FB'
-                    }),
+        dbc.Button("Przeprowadź testy Algorytmu Genetycznego",
+                   outline=True, color="info", id='start_test_button', n_clicks=0),
         html.Br(),
         html.Br(),
         dcc.Loading(children=[
@@ -202,9 +165,8 @@ app.layout = html.Div(children=[
                 'margin': 'auto',
                 'width': '50%'
             }),
-            # html.Button(id='top10_button', n_clicks=0, children='Pobierz top10 konfiguracji parametrów'),
             dcc.Download(id="download_top10"),
-            ], style={'position': 'relative', 'display': 'flex', 'justify-content': 'center'}),
+        ], style={'position': 'relative', 'display': 'flex', 'justify-content': 'center'}),
     ], style={
         'textAlign': 'center',
         'margin': 'auto',
@@ -213,10 +175,10 @@ app.layout = html.Div(children=[
 ])
 
 
-@app.callback(Output('div_test_results', 'children'),
-              Output('download_top10', 'data'),
-              Input('start_test_button', 'n_clicks'),
-              prevent_initial_call=True)
+@callback(Output('div_test_results', 'children'),
+          Output('download_top10', 'data'),
+          Input('start_test_button', 'n_clicks'),
+          prevent_initial_call=True)
 def start_test(start_test):
     rdf = test.mini_test()
     top10df = bp.top10_from_df(rdf)
@@ -226,38 +188,40 @@ def start_test(start_test):
     top10df.insert(0, "Lp.", np.arange(1, top10df.shape[0] + 1))
     down_data = dict(content=top10csv, filename="top10.csv")
 
-    return results_table(top10df), down_data
+    return generate_table(top10df), down_data
 
 
-@app.callback(Output('div_toggle', 'hidden'),
-              Input('btn_toggle', 'value'))
+@callback(Output('div_toggle', 'hidden'),
+          Input('btn_toggle', 'value'),
+          prevent_initial_call=True)
 def toggle_table(value):
     return value
 
 
-@app.callback(Output('population_table', 'children'),
-              Output('a_value', 'value'),
-              Output('b_value', 'value'),
-              Output('n_value', 'value'),
-              Output('ag_graph', 'figure'),
-              Output('results_table', 'children'),
-              Output('download_populations', 'data'),
-              Output('error_msg', 'children'),
-              Input('submit_button', 'n_clicks'),
-              Input('download_button', 'n_clicks'),
-              State('a_value', 'value'),
-              State('b_value', 'value'),
-              State('n_value', 'value'),
-              State('d_value', 'value'),
-              State('pk_value', 'value'),
-              State('pm_value', 'value'),
-              State('elite_value', 'on'),
-              State('t_value', 'value'))
+@callback(Output('population_table', 'children'),
+          Output('a_value', 'value'),
+          Output('b_value', 'value'),
+          Output('n_value', 'value'),
+          Output('ag_graph', 'figure'),
+          Output('generate_table', 'children'),
+          Output('download_populations', 'data'),
+          Output('error_msg', 'children'),
+          Input('submit_button', 'n_clicks'),
+          Input('download_button', 'n_clicks'),
+          State('a_value', 'value'),
+          State('b_value', 'value'),
+          State('n_value', 'value'),
+          State('d_value', 'value'),
+          State('pk_value', 'value'),
+          State('pm_value', 'value'),
+          State('elite_value', 'on'),
+          State('t_value', 'value'),
+          prevent_initial_call=True)
 def update_table(button_submit, button_download, input_a, input_b, input_n, input_d, input_pk, input_pm, input_elite, input_t):
     if None in [input_a, input_b, input_n, input_pk, input_pm, input_t]:
         return no_update, input_a, input_b, input_n, no_update, no_update, no_update, \
-               html.Div("Pola wypełniamy wartościami numerycznymi, pk i pm [0:1], N i T [1:200]",
-                        style={'color': 'red'})
+            html.Div("Pola wypełniamy wartościami numerycznymi, pk i pm [0:1], N i T [1:200]",
+                     style={'color': 'red'})
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
         return no_update, input_a, input_b, input_n, no_update, no_update, no_update, html.Div(
             "Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.",
@@ -302,7 +266,8 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
     nl = '\n'
     tab = '\t'
 
-    elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
+    elite_memo = elite.get_best(
+        x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
 
     for i in range(input_t):
         fxs = [cmp.compute_fx(float(x)) for x in x_reals]
@@ -311,23 +276,29 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
         qxs = sel.compute_qxs(pxs)
         rs = sel.compute_r(n)
         sel_reals = sel.get_new_population(rs, qxs, x_reals)
-        sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
+        sel_ints = [cmp.compute_x_int(float(x), length, a, b)
+                    for x in sel_reals]
         sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
         parent_bins = cross.get_parents(sel_bins, pk)
         cross_points = cross.get_cross_points(parent_bins, length)
         children_bins = cross.get_children(parent_bins, cross_points)
         children_w_cp = cross.get_children_w_cp(children_bins, cross_points)
         pop_after_cross = cross.get_pop_after_cross(children_bins, sel_bins)
-        mutation_indices = [mut.get_mutation_indices(length, pm) for _ in range(n)]
+        mutation_indices = [mut.get_mutation_indices(
+            length, pm) for _ in range(n)]
         mutation_indices_formatted = [f'{x}' for x in mutation_indices]
         pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
-        x_reals_after_cross_mut = cmp.add_precision(cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
+        x_reals_after_cross_mut = cmp.add_precision(
+            cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
         if input_elite is not False:
-            fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
+            fxs_after_cm = [cmp.compute_fx((float(x)))
+                            for x in x_reals_after_cross_mut]
             elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
-            x_reals_after_cross_mut = elite.inject(elite_memo, x_reals_after_cross_mut)
+            x_reals_after_cross_mut = elite.inject(
+                elite_memo, x_reals_after_cross_mut)
             elite_memo = elite_new
-        fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
+        fxs_cross_mutation = [cmp.compute_fx(
+            float(x)) for x in x_reals_after_cross_mut]
         x_reals = x_reals_after_cross_mut
         fx_maxs.append(np.max(fxs_cross_mutation))
         fx_avgs.append(np.average(fxs_cross_mutation))
@@ -377,7 +348,8 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
                      x="pokolenie",
                      y=["fx_max", "fx_avg", "fx_min"],
                      title="Wykres przebiegu f_max(x), f_min(x) oraz f_avg(x)",
-                     labels={"pokolenie": f'Pokolenia dla T={input_t}', "value": "Wartości f(x)"},
+                     labels={"pokolenie": f'Pokolenia dla T={input_t}',
+                             "value": "Wartości f(x)"},
                      markers="true")
 
     if not ctx.triggered:
@@ -390,7 +362,7 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
             generate_table(df, max_rows=n), \
             a, b, n, \
             ag_fig, \
-            results_table(df_result_sorted), \
+            generate_table(df_result_sorted), \
             dict(content=population_txt, filename="population.txt"), \
             ""
 
@@ -398,10 +370,6 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
         generate_table(df, max_rows=n), \
         a, b, n, \
         ag_fig, \
-        results_table(df_result_sorted), \
+        generate_table(df_result_sorted), \
         no_update, \
         ""
-
-
-if __name__ == '__main__':
-    app.run_server(debug=True)

@@ -1,10 +1,10 @@
-import compute as cmp
-import selection as sel
+import utils.compute as cmp
+import utils.selection as sel
 import numpy as np
 import pandas as pd
-import crossover as cross
-import mutation as mut
-import elite
+import utils.crossover as cross
+import utils.mutation as mut
+import utils.elite as elite
 from multiprocessing import Pool, freeze_support
 import timeit
 import itertools
@@ -28,7 +28,8 @@ def test_func(params):
     length = 14
     x_reals_after_cross_mut = []
     x_reals = cmp.add_precision(cmp.generate_population(a, b, n_value), d)
-    elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
+    elite_memo = elite.get_best(
+        x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
     for i in range(t_value):
         fxs = [cmp.compute_fx(float(x)) for x in x_reals]
         gxs = sel.compute_gxs(fxs, min(fxs), d)
@@ -36,7 +37,8 @@ def test_func(params):
         qxs = sel.compute_qxs(pxs)
         rs = sel.compute_r(n_value)
         sel_reals = sel.get_new_population(rs, qxs, x_reals)
-        sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
+        sel_ints = [cmp.compute_x_int(float(x), length, a, b)
+                    for x in sel_reals]
         sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
         parent_bins = cross.get_parents(sel_bins, pk_value)
         cross_points = cross.get_cross_points(parent_bins, length)
@@ -47,12 +49,15 @@ def test_func(params):
         pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
         x_reals_after_cross_mut = cmp.add_precision(
             cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
-        fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
+        fxs_after_cm = [cmp.compute_fx((float(x)))
+                        for x in x_reals_after_cross_mut]
         elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
-        x_reals_after_cross_mut = elite.inject(elite_memo, x_reals_after_cross_mut)
+        x_reals_after_cross_mut = elite.inject(
+            elite_memo, x_reals_after_cross_mut)
         elite_memo = elite_new
         x_reals = x_reals_after_cross_mut
-    fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
+    fxs_cross_mutation = [cmp.compute_fx(float(x))
+                          for x in x_reals_after_cross_mut]
     f_max = np.max(fxs_cross_mutation)
     f_avg = np.average(fxs_cross_mutation)
     print(f'N: {n_value} pk: {pk_value} pm: {pm_value} T: {t_value} '
@@ -73,7 +78,8 @@ if __name__ == '__main__':
     # multiprocessing parameters:
     n_processors = psutil.cpu_count(logical=False)
     print(f'Starting on {n_processors} processors.')
-    paramlist = list(itertools.product(n_values, pk_values, pm_values, t_values, i_values))
+    paramlist = list(itertools.product(
+        n_values, pk_values, pm_values, t_values, i_values))
 
     result = run_multiprocessing(test_func, paramlist, n_processors)
 
@@ -88,7 +94,8 @@ if __name__ == '__main__':
     rdf_new.index = range(1, rdf_new.shape[0] + 1)
     rdf_new.to_csv('res_agg.csv', index_label="lp")
     rdf.index = range(1, rdf.shape[0] + 1)
-    rdf.to_csv('results_save.csv', index_label="lp", header=["n", "pk", "pm", "t", "fmax", "favg"])
+    rdf.to_csv('results_save.csv', index_label="lp", header=[
+               "n", "pk", "pm", "t", "fmax", "favg"])
     pd_stop = timeit.default_timer()
     pd_time = pd_stop - pd_start
     print(f'Pandas time: {pd_time}')

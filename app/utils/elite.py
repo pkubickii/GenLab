@@ -1,5 +1,5 @@
 import numpy as np
-import compute as cmp
+from utils import compute as cmp
 
 
 def get_best(x_reals, fxs):

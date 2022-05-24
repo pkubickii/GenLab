@@ -1,10 +1,10 @@
-import compute as cmp
-import selection as sel
 import numpy as np
 import pandas as pd
-import crossover as cross
-import mutation as mut
-import elite
+from utils import crossover as cross
+from utils import mutation as mut
+from utils import elite
+from utils import compute as cmp
+from utils import selection as sel
 from horology import timed
 
 
@@ -30,32 +30,46 @@ def test_func(n_values, pk_values, pm_values, t_values):
                     fxmax_100 = []
                     fxavg_100 = []
                     for omg in range(10):
-                        x_reals = cmp.add_precision(cmp.generate_population(a, b, n_values[n]), d)
-                        elite_memo = elite.get_best(x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
+                        x_reals = cmp.add_precision(
+                            cmp.generate_population(a, b, n_values[n]), d)
+                        elite_memo = elite.get_best(
+                            x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
                         for i in range(t_values[t]):
                             fxs = [cmp.compute_fx(float(x)) for x in x_reals]
                             gxs = sel.compute_gxs(fxs, min(fxs), d)
                             pxs = sel.compute_pxs(gxs)
                             qxs = sel.compute_qxs(pxs)
                             rs = sel.compute_r(n_values[n])
-                            sel_reals = sel.get_new_population(rs, qxs, x_reals)
-                            sel_ints = [cmp.compute_x_int(float(x), length, a, b) for x in sel_reals]
-                            sel_bins = [cmp.compute_x_bin(x, length) for x in sel_ints]
-                            parent_bins = cross.get_parents(sel_bins, pk_values[pk])
-                            cross_points = cross.get_cross_points(parent_bins, length)
-                            children_bins = cross.get_children(parent_bins, cross_points)
-                            pop_after_cross = cross.get_pop_after_cross(children_bins, sel_bins)
+                            sel_reals = sel.get_new_population(
+                                rs, qxs, x_reals)
+                            sel_ints = [cmp.compute_x_int(
+                                float(x), length, a, b) for x in sel_reals]
+                            sel_bins = [cmp.compute_x_bin(
+                                x, length) for x in sel_ints]
+                            parent_bins = cross.get_parents(
+                                sel_bins, pk_values[pk])
+                            cross_points = cross.get_cross_points(
+                                parent_bins, length)
+                            children_bins = cross.get_children(
+                                parent_bins, cross_points)
+                            pop_after_cross = cross.get_pop_after_cross(
+                                children_bins, sel_bins)
                             mutation_indices = [mut.get_mutation_indices(length, pm_values[pm]) for _ in
                                                 range(n_values[n])]
-                            pop_after_mut = mut.mutation(pop_after_cross, mutation_indices)
+                            pop_after_mut = mut.mutation(
+                                pop_after_cross, mutation_indices)
                             x_reals_after_cross_mut = cmp.add_precision(
                                 cmp.compute_xreals_from_xbins(a, b, length, pop_after_mut), d)
-                            fxs_after_cm = [cmp.compute_fx((float(x))) for x in x_reals_after_cross_mut]
-                            elite_new = elite.get_best(x_reals_after_cross_mut, fxs_after_cm)
-                            x_reals_after_cross_mut = elite.inject(elite_memo, x_reals_after_cross_mut)
+                            fxs_after_cm = [cmp.compute_fx(
+                                (float(x))) for x in x_reals_after_cross_mut]
+                            elite_new = elite.get_best(
+                                x_reals_after_cross_mut, fxs_after_cm)
+                            x_reals_after_cross_mut = elite.inject(
+                                elite_memo, x_reals_after_cross_mut)
                             elite_memo = elite_new
                             x_reals = x_reals_after_cross_mut
-                        fxs_cross_mutation = [cmp.compute_fx(float(x)) for x in x_reals_after_cross_mut]
+                        fxs_cross_mutation = [cmp.compute_fx(
+                            float(x)) for x in x_reals_after_cross_mut]
                         fxmax_100.append(np.max(fxs_cross_mutation))
                         fxavg_100.append(np.average(fxs_cross_mutation))
                     ns.append(n_values[n])
@@ -81,7 +95,8 @@ def mini_test():
     pm_values = [0.0001, 0.005]
     t_values = [50, 100]
 
-    ns, pks, pms, ts, fmaxs, favgs = test_func(n_values, pk_values, pm_values, t_values)
+    ns, pks, pms, ts, fmaxs, favgs = test_func(
+        n_values, pk_values, pm_values, t_values)
 
     rdf = pd.DataFrame({
         "n": ns,

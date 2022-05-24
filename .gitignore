@@ -141,5 +141,5 @@ cython_debug/
 
 # .idea
 .idea/
-
+p.sh
 results/

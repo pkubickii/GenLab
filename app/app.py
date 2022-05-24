@@ -1,0 +1,54 @@
+import dash
+from dash import Dash, html, dcc, Input, Output, callback
+from pages import home, geo, ag
+import dash_bootstrap_components as dbc
+
+dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.css"
+app = Dash(__name__, external_stylesheets=[
+           dbc.themes.QUARTZ, dbc_css], suppress_callback_exceptions=True)
+
+server = app.server
+app.title = 'GenLab'
+
+navbar = dbc.NavbarSimple(
+    dbc.DropdownMenu(
+        [
+            dbc.DropdownMenuItem("Home", href="/"),
+            dbc.DropdownMenuItem("AG", href="/ag"),
+            dbc.DropdownMenuItem("GEO", href="/geo"),
+        ],
+        nav=True,
+        label="Nawigacja",
+    ),
+    brand="ISA LAB",
+    color="primary",
+    dark=True,
+    class_name="mb-2 mx-0",
+)
+
+app.layout = dbc.Container(
+    [
+        navbar,
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-content')
+    ],
+    fluid=True,
+    class_name="m-0 p-0",
+)
+
+
+@callback(Output('page-content', 'children'),
+          Input('url', 'pathname'))
+def display_page(pathname):
+    if pathname == '/':
+        return home.layout
+    elif pathname == '/geo':
+        return geo.layout
+    elif pathname == '/ag':
+        return ag.layout
+    else:
+        return '404'
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
