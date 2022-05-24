@@ -219,7 +219,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_tau, input_t):
             "Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.", style={'color': 'red'})
     elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
         return no_update, no_update, html.Div(
-            "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M].",
+            "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M]",
             style={'color': 'red'})
     if input_a > input_b:
         a = int(np.ma.round(input_b))
