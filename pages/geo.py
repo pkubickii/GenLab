@@ -191,7 +191,7 @@ layout = html.Div(
           Input('test_button', 'n_clicks'),
           prevent_initial_call=True)
 def test_button(button_click):
-    df = pd.read_csv("app/pages/assets/geo/geotest_2000_500.csv")
+    df = pd.read_csv("pages/assets/geo/geotest_2000_500.csv")
     test_fig = px.line(df,
                        x="tau",
                        y="fxs",
