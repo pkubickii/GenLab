@@ -201,10 +201,13 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
 
     times = np.arange(len(df_climbs))
     df = pd.concat(df_climbs, keys=times)
-    # hc_result_fig = px.scatter(df,
-                               # x=df.keys(),
-                               # y=["vcfx_climb"],
-                               # title="Wykres przebiegu fx(vc)",
-                               # )
-    print(df)
-    return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), no_update, ""
+    hc_result_fig = px.scatter(df,
+                               x=df.index.get_level_values(0),
+                               y="vcfx_climb",
+                               title="Wykres przebiegu fx(vc)",
+                               color=df.index.get_level_values(0),
+                               text="vcr_climb"
+                               )
+    hc_result_fig.update_traces(textposition="bottom right")
+    # print(df)
+    return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), hc_result_fig, ""

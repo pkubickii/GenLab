@@ -73,4 +73,4 @@ if __name__ == '__main__':
     df = pd.concat(dfs, keys=times)
     print(df)
     df.index.names = ["one", "two"]
-    print(df.index.values)
+    print(df.index.get_level_values(0))

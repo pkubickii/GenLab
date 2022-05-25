@@ -261,7 +261,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_tau, input_t):
                       title="Wykres przebiegu fx(vb)",
                       labels={"pokolenie": f'Pokolenia dla T={time_t}',
                               "value": "Wartości f(x)"},
-                      markers="true")
+                      markers=True)
 
     df = df.sort_values(["fx", "fx_best_in_t"], ascending=[False, True])
     df.index = np.arange(0, time_t)
