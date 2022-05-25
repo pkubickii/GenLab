@@ -195,7 +195,7 @@ def test_button(button_click):
     test_fig = px.line(df,
                        x="tau",
                        y="fxs",
-                       title="Wykres fx_avg(vb) dla różnych tau przy T = 300 oraz ilości prób = 2000 na jedną wartość tau",
+                       title="Wykres fx_avg(vb) dla różnych tau przy T = 500 oraz ilości prób = 2000 na jedną wartość tau",
                        markers="true")
     return dcc.Graph(id="test_graph", figure=test_fig)
 
