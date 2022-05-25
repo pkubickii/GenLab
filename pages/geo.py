@@ -263,7 +263,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_tau, input_t):
                               "value": "Wartości f(x)"},
                       markers="true")
 
-    df = df.sort_values("fx", ascending=False)
+    df = df.sort_values(["fx", "fx_best_in_t"], ascending=[False, True])
     df.index = np.arange(0, time_t)
     df = df.truncate(after=0)
     df = df.drop(columns=["fx_best_in_t"])
