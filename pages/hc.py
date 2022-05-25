@@ -43,7 +43,7 @@ def hill_climbing(a, b, d, length, dot_places):
             "fxs_neighbours": fxs_neighbours,
         })
         df = df.sort_values("fxs_neighbours", ascending=False)
-        if vc_fx <= df.iloc[0][1]:
+        if vc_fx < df.iloc[0][1]:
             vc = df.iloc[0][0]
             vc_real = vc_real_from_vc(vc, length, a, b, dot_places)
             vc_results.append(df.iloc[0][0])
