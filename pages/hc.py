@@ -201,13 +201,19 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
 
     times = np.arange(len(df_climbs))
     df = pd.concat(df_climbs, keys=times)
-    hc_result_fig = px.scatter(df,
-                               x=df.index.get_level_values(0),
-                               y="vcfx_climb",
-                               title="Wykres przebiegu fx(vc)",
-                               color=df.index.get_level_values(0),
-                               text="vcr_climb"
-                               )
-    hc_result_fig.update_traces(textposition="bottom right")
-    # print(df)
+    # hc_result_fig = px.scatter(df,
+                               # x=df.index.get_level_values(0),
+                               # y="vcfx_climb",
+                               # title="Wykres przebiegu fx(vc)",
+                               # color=df.index.get_level_values(0),
+                               # text="vcr_climb"
+                               # )
+    # hc_result_fig.update_traces(textposition="bottom right")
+    df.insert(loc=0, column="period", value=df.index.get_level_values(0))
+    hc_result_fig = px.line(df,
+            x = "period", 
+            y = "vcfx_climb",
+            color = "period",
+            markers = True,
+            )
     return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), hc_result_fig, ""

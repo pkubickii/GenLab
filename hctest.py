@@ -72,5 +72,7 @@ if __name__ == '__main__':
     times = np.arange(len(dfs))
     df = pd.concat(dfs, keys=times)
     print(df)
-    df.index.names = ["one", "two"]
+    # df.index.names = ["one", "two"]
     print(df.index.get_level_values(0))
+    df.insert(loc=0, column="period", value=df.index.get_level_values(0))
+    print(df)
