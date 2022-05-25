@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pandas.core.indexes.multi import MultiIndex
 import utils.compute as cmp
 
 
@@ -66,6 +67,10 @@ if __name__ == '__main__':
     time_t = 3
     dfs = []
     for t in range(time_t):
-        df_climb = hill_climbing()
-        dfs.append(df_climb)
-        print(df_climb)
+        df_climbs = hill_climbing()
+        dfs.append(df_climbs)
+    times = np.arange(len(dfs))
+    df = pd.concat(dfs, keys=times)
+    print(df)
+    df.index.names = ["one", "two"]
+    print(df.index.values)
