@@ -46,7 +46,7 @@ def hill_climbing():
             "fxs_neighbours": fxs_neighbours,
         })
         df = df.sort_values("fxs_neighbours", ascending=False)
-        if vc_fx <= df.iloc[0][1]:
+        if vc_fx < df.iloc[0][1]:
             vc = df.iloc[0][0]
             vc_real = vc_real_from_vc(vc, length, a, b, dot_places)
             vc_results.append(df.iloc[0][0])
@@ -71,8 +71,16 @@ if __name__ == '__main__':
         dfs.append(df_climbs)
     times = np.arange(len(dfs))
     df = pd.concat(dfs, keys=times)
-    print(df)
-    # df.index.names = ["one", "two"]
-    print(df.index.get_level_values(0))
     df.insert(loc=0, column="period", value=df.index.get_level_values(0))
     print(df)
+    rdf = df.groupby(by="period").agg({"vcfx_climb": [np.max]})
+    # print(df.loc[0])
+    one_period = df.loc[0]["period"].to_list()
+    # steps = np.around(np.linspace(0.0, 1.0, num=len(one_period)+2), 2)[1:-1]
+    # steps = np.around(np.linspace(0.0, 1.0, num=len(one_period)+2), 2)
+
+    t_steps = []
+    for i in range(time_t):
+        t_steps.append(np.around(np.linspace(
+            0.0, 1.0, num=len(one_period)+2), 2)[1:-1])
+    print(t_steps)

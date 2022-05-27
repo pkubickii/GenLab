@@ -4,6 +4,8 @@ import utils.compute as cmp
 import dash_bootstrap_components as dbc
 from dash import Dash, html, dcc, Input, Output, State, callback, no_update
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 
 def get_neighbours(vc):
@@ -209,11 +211,37 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
                                # text="vcr_climb"
                                # )
     # hc_result_fig.update_traces(textposition="bottom right")
+
     df.insert(loc=0, column="period", value=df.index.get_level_values(0))
-    hc_result_fig = px.line(df,
-            x = "period", 
-            y = "vcfx_climb",
-            color = "period",
-            markers = True,
-            )
+    # hc_result_fig = px.line(df,
+            # x = "period",
+            # y = "vcfx_climb",
+            # color = "period",
+            # markers = True,
+            # )
+
+    rdf = df.groupby(by="period").agg({"vcfx_climb": [np.max]})
+    t_steps = []
+    for i in range(time_t):
+        one_period = df.loc[i]["period"].to_list()
+        t_steps.append(np.around(np.linspace(
+            one_period[0]+0.0, one_period[0]+1.0, num=len(one_period)+2), 2)[1:-1])
+
+    # steps = np.around(np.linspace(0.0, 1.0, num=len(one_period)+2), 2)[1:-1]
+
+    hc_result_fig = make_subplots(
+        rows=1,
+        cols=time_t,
+        shared_xaxes=False,
+        shared_yaxes=True,
+        vertical_spacing=0.02,
+        horizontal_spacing=0.0,
+    )
+    for i in range(time_t):
+        hc_result_fig.add_trace(go.Scatter(
+            x=t_steps[i], y=df.loc[i]["vcfx_climb"].to_list()), row=1, col=i+1)
+
+    hc_result_fig.update_layout(autosize=True, height=800,
+                                title_text="Hill Climbing Plot",
+                                )
     return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), hc_result_fig, ""
