@@ -186,6 +186,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
         return no_update, no_update, html.Div(
             "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M]",
             style={'color': 'red'})
+    # params init:
     if input_a > input_b:
         a = int(np.ma.round(input_b))
         b = int(np.ma.round(input_a))
@@ -198,50 +199,69 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
     length = cmp.compute_length(a, b, d)
     dot_places = cmp.compute_precision(d)
     df_climbs = []
+
+    # main loop:
     for t in range(time_t):
         df_climbs.append(hill_climbing(a, b, d, length, dot_places))
 
+    # chart stuff:
     times = np.arange(len(df_climbs))
     df = pd.concat(df_climbs, keys=times)
-    # hc_result_fig = px.scatter(df,
-                               # x=df.index.get_level_values(0),
-                               # y="vcfx_climb",
-                               # title="Wykres przebiegu fx(vc)",
-                               # color=df.index.get_level_values(0),
-                               # text="vcr_climb"
-                               # )
-    # hc_result_fig.update_traces(textposition="bottom right")
-
     df.insert(loc=0, column="period", value=df.index.get_level_values(0))
-    # hc_result_fig = px.line(df,
-            # x = "period",
-            # y = "vcfx_climb",
-            # color = "period",
-            # markers = True,
-            # )
-
-    rdf = df.groupby(by="period").agg({"vcfx_climb": [np.max]})
     t_steps = []
     for i in range(time_t):
         one_period = df.loc[i]["period"].to_list()
         t_steps.append(np.around(np.linspace(
             one_period[0]+0.0, one_period[0]+1.0, num=len(one_period)+2), 2)[1:-1])
+    t_steps_flat = np.concatenate(t_steps).tolist()
 
-    # steps = np.around(np.linspace(0.0, 1.0, num=len(one_period)+2), 2)[1:-1]
+    fxs_climb = [df.loc[0]["vcfx_climb"].to_list()[0]]
+    vcr_climb = [df.loc[0]["vcr_climb"].to_list()[0]]
+    fxs_all = df["vcfx_climb"].to_list()
+    vcr_all = df["vcr_climb"].to_list()
+    for i in range(1, df.shape[0]):
+        if fxs_climb[i-1] < fxs_all[i]:
+            fxs_climb.append(fxs_all[i])
+            vcr_climb.append(vcr_all[i])
+        else:
+            fxs_climb.append(fxs_climb[i-1])
+            vcr_climb.append(vcr_climb[i-1])
 
     hc_result_fig = make_subplots(
         rows=1,
-        cols=time_t,
-        shared_xaxes=False,
+        cols=1,
+        shared_xaxes=True,
         shared_yaxes=True,
-        vertical_spacing=0.02,
+        vertical_spacing=0.0,
         horizontal_spacing=0.0,
     )
     for i in range(time_t):
+        vcr = df.loc[i]["vcr_climb"].to_list()
         hc_result_fig.add_trace(go.Scatter(
-            x=t_steps[i], y=df.loc[i]["vcfx_climb"].to_list()), row=1, col=i+1)
+            x=t_steps[i],
+            y=df.loc[i]["vcfx_climb"].to_list(),
+            line={'dash': 'longdashdot'},
+            marker={'size': 12},
+            hovertemplate='<br>fx = <b>%{y}</b><br>' +
+            'vcr = <b>%{text}</b><br>',
+            text=vcr,
+            name=f'okres {i}'
+        ), row=1, col=1)
 
-    hc_result_fig.update_layout(autosize=True, height=800,
-                                title_text="Hill Climbing Plot",
-                                )
+    hc_result_fig.add_trace(go.Scatter(
+        x=t_steps_flat,
+        y=fxs_climb,
+        name='fx max',
+        hovertemplate='<br>fx = <b>%{y}</b><br>' +
+        'vcr = <b>%{text}</b>',
+        text=vcr_climb,
+        line={'dash': 'solid', 'color': 'red', 'width': 5}
+    ), row=1, col=1)
+
+    hc_result_fig.update_layout(
+        autosize=True,
+        height=800,
+        title_text="Hill Climbing Plot",
+        hovermode='x unified'
+    )
     return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), hc_result_fig, ""
