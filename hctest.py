@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from pandas.core.indexes.multi import MultiIndex
 import utils.compute as cmp
+import timeit
+import json
 
 
 def get_neighbours(vc):
@@ -21,13 +23,8 @@ def vc_real_from_vc(vc, length, a, b, p):
     return f'{cmp.compute_x_real(vc_int, length, a, b):.{p}f}'
 
 
-def hill_climbing():
+def hill_climbing(a, b, d, length, dot_places):
     stop = False
-    a = -4
-    b = 12
-    d = 10 ** -3
-    length = cmp.compute_length(a, b, d)
-    dot_places = cmp.compute_precision(d)
     rand_float = np.random.uniform(a, b)
     vc_real = f'{rand_float:.{dot_places}f}'
     vc_int = cmp.compute_x_int(float(vc_real), length, a, b)
@@ -63,53 +60,35 @@ def hill_climbing():
 
 
 if __name__ == '__main__':
+    start = timeit.default_timer()
+    a = -4
+    b = 12
+    d = 10 ** -3
+    length = cmp.compute_length(a, b, d)
+    dot_places = cmp.compute_precision(d)
+    test = 10
+    time_t = 100
+    df_1000 = []
+    for i in range(test):
+        df_climbs = []
+        for t in range(time_t):
+            df_climbs.append(hill_climbing(a, b, d, length, dot_places))
+            times = np.arange(len(df_climbs))
+        df_1000.append(pd.concat(df_climbs, keys=times))
+    tests = np.arange(test)
+    df = pd.concat(df_1000, keys=tests)
 
-    time_t = 3
-    dfs = []
-    for t in range(time_t):
-        df_climbs = hill_climbing()
-        dfs.append(df_climbs)
-    times = np.arange(len(dfs))
-    df = pd.concat(dfs, keys=times)
-    df.insert(loc=0, column="period", value=df.index.get_level_values(0))
-    print(df)
-    rdf = df.groupby(by="period").agg({"vcfx_climb": [np.max]})
-    fxs_max = rdf[("vcfx_climb", "amax")].to_list()
-    # print(fxs_max)
-    t_steps = []
-    for i in range(time_t):
-        one_period = df.loc[i]["period"].to_list()
-        t_steps.append(np.around(np.linspace(
-            one_period[0]+0.0, one_period[0]+1.0, num=len(one_period)+2), 2)[1:-1])
+    test_values = np.zeros(time_t).tolist()
+    for i in range(test):
+        df_one = df.loc[i]["vcr_climb"]
+        if len(df_one[df_one == "10.999"]) < 1:
+            continue
+        test_values[df_one[df_one == "10.999"].index[0][0]] += 1
+    print(test_values)
 
-    fxs_climb = [df.loc[0]["vcfx_climb"].to_list()[0]]
-    fxs_all = df["vcfx_climb"].to_list()
-    for i in range(1, df.shape[0]):
-        if fxs_climb[i-1] < fxs_all[i]:
-            fxs_climb.append(fxs_all[i])
-        else:
-            fxs_climb.append(fxs_climb[i-1])
-    # print(fxs_climb)
-    # print(t_steps)
-    t_steps_flat = np.concatenate(t_steps).tolist()
-    # print(t_steps_flat)
-    # print(type(t_steps_flat))
-    vcr_all = df["vcr_climb"].to_list()
-    # print(vcr_all)
-    vc_all = df["vc_climb"].to_list()
-    # print(vc_all)
-    vca = []
-
-    # print(rdf[("vcfx_climb", "amax")].to_list())
-    # print(rdf.columns.values.tolist())
-    # one_period = df.loc[0]["period"].to_list()
-    # print(one_period)
-    # steps = np.around(np.linspace(0.0, 1.0, num=len(one_period)+2), 2)[1:-1]
-    # steps = np.around(np.linspace(0.0, 1.0, num=len(one_period)+2), 2)
-
-    # t_steps = []
-    # for i in range(time_t):
-    # t_steps.append(np.around(np.linspace(
-    # 0.0, 1.0, num=len(one_period)+2), 2)[1:-1])
-    # print(t_steps)
-    # print(np.arange(time_t).tolist())
+    stop = timeit.default_timer()
+    print(f'the time: {stop-start}')
+    df.to_csv("./results/hcall.csv", index_label=["test", "T", "idx"])
+    file = open("./results/hcresults.txt", "w")
+    file.write(str(test_values))
+    file.close()

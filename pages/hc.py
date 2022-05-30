@@ -6,6 +6,7 @@ from dash import Dash, html, dcc, Input, Output, State, callback, no_update
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import json
 
 
 def get_neighbours(vc):
@@ -103,7 +104,7 @@ form = dbc.Form(
                         dbc.InputGroup([
                             dbc.InputGroupText("T:"),
                             dbc.Input(id='t_value', type='number', min=1,
-                                      max=5000, placeholder='T', value=5),
+                                      max=5000, placeholder='T', value=75),
                         ], className='me-3'),
                         ], width=2),
                 dbc.Col([
@@ -136,16 +137,17 @@ layout = html.Div(
                 ]),
                 html.Br(),
                 html.Div([
-                    dbc.Button("Wynik testów", id="test_button", outline=True, color="success",
+                    dbc.Button("Wynik testów", id="hc_test_button", outline=True, color="success",
                                size="lg", n_clicks=0),
                 ], style={
                     'textAlign': 'center'
                 }),
                 html.Br(),
                 html.Br(),
-                html.Div([], id="test_graph"),
+                html.Div([], id="hc_test_fig"),
                 html.Br(),
                 html.Br(),
+                html.Div([], id='hc_test_table'),
                 html.Br(),
             ], style={
                 'margin': 'auto',
@@ -164,6 +166,36 @@ layout = html.Div(
         html.Div([], id='download_populations', style={'display': 'none'}),
     ]
 )
+
+
+@callback(Output('hc_test_table', 'children'),
+          Output('hc_test_fig', 'children'),
+          Input('hc_test_button', 'n_clicks'),
+          prevent_initial_call=True)
+def show_tests(n_clicks):
+    file = open("./pages/assets/hc/hc_hist_table.txt", "r")
+    line = file.readline()
+    max_in_t = json.loads(line)
+    hist_max = [max_in_t[0]]
+    for i in range(1, len(max_in_t)):
+        hist_max.append(hist_max[i-1] + max_in_t[i])
+    num_of_results = 1000
+    hist_percent = list(map(lambda x: np.round(
+        x / num_of_results * 100, 2), hist_max))
+
+    df = pd.DataFrame({
+        "res_count": max_in_t,
+        "hist_max": hist_max,
+        "hist_percent": hist_percent
+    })
+
+    test_fig = px.line(df,
+                       y="hist_percent",
+                       title="Wykres znalezionych rozwiązań",
+                       markers="true")
+    df = df.reset_index()
+    df.columns = ["okres", "ilość best vc", "hist. kumul.", "hist. proc."]
+    return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), dcc.Graph(id="hc_test_graph", figure=test_fig)
 
 
 @callback(Output('hc_result_table', 'children'),
@@ -208,7 +240,12 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
     times = np.arange(len(df_climbs))
     df = pd.concat(df_climbs, keys=times)
     df.insert(loc=0, column="period", value=df.index.get_level_values(0))
+    df_best = df.sort_values(["vcfx_climb", "period"], ascending=[False, True])
+    df_best.columns = ["okres", "vc bin", "vc real", "f(vc)"]
+    df_best.index = np.arange(df_best.shape[0])
+    df_best = df_best.truncate(after=0)
     t_steps = []
+
     for i in range(time_t):
         one_period = df.loc[i]["period"].to_list()
         t_steps.append(np.around(np.linspace(
@@ -264,4 +301,4 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
         title_text="Hill Climbing Plot",
         hovermode='x unified'
     )
-    return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), hc_result_fig, ""
+    return dbc.Table.from_dataframe(df_best, striped=True, bordered=True, hover=True), hc_result_fig, ""
