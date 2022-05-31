@@ -194,7 +194,7 @@ def show_tests(n_clicks):
                        y="hist_percent",
                        title="Wykres obrazujący procentową szansę na odnalezienie rozwiązania zależną od ilości iteracji T",
                        markers="true",
-                       labels={ "index": "okres T", "hist_percent": "procent"})
+                       labels={"index": "okres T", "hist_percent": "procent"})
     df = df.reset_index()
     df.columns = ["okres", "ilość best vc", "hist. kumul.", "hist. proc."]
     return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), dcc.Graph(id="hc_test_graph", figure=test_fig)
