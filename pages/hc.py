@@ -173,7 +173,8 @@ layout = html.Div(
           Input('hc_test_button', 'n_clicks'),
           prevent_initial_call=True)
 def show_tests(n_clicks):
-    file = open("./pages/assets/hc/hc_hist_table.txt", "r")
+    # file = open("./pages/assets/hc/hc_hist_table.txt", "r")
+    file = open("./results/hcresults.txt", "r")
     line = file.readline()
     max_in_t = json.loads(line)
     hist_max = [max_in_t[0]]
@@ -191,8 +192,9 @@ def show_tests(n_clicks):
 
     test_fig = px.line(df,
                        y="hist_percent",
-                       title="Wykres znalezionych rozwiązań",
-                       markers="true")
+                       title="Wykres obrazujący procentową szansę na odnalezienie rozwiązania zależną od ilości iteracji T",
+                       markers="true",
+                       labels={ "index": "okres T", "hist_percent": "procent"})
     df = df.reset_index()
     df.columns = ["okres", "ilość best vc", "hist. kumul.", "hist. proc."]
     return dbc.Table.from_dataframe(df, striped=True, bordered=True, hover=True), dcc.Graph(id="hc_test_graph", figure=test_fig)
@@ -271,6 +273,8 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
         shared_yaxes=True,
         vertical_spacing=0.0,
         horizontal_spacing=0.0,
+        x_title="okres",
+        y_title="f(Vc)"
     )
     for i in range(time_t):
         vcr = df.loc[i]["vcr_climb"].to_list()
@@ -298,7 +302,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
     hc_result_fig.update_layout(
         autosize=True,
         height=800,
-        title_text="Hill Climbing Plot",
-        hovermode='x unified'
+        title_text="Algorytm Najwyższego Wzrostu",
+        hovermode='x unified',
     )
     return dbc.Table.from_dataframe(df_best, striped=True, bordered=True, hover=True), hc_result_fig, ""
