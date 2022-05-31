@@ -173,8 +173,8 @@ layout = html.Div(
           Input('hc_test_button', 'n_clicks'),
           prevent_initial_call=True)
 def show_tests(n_clicks):
-    # file = open("./pages/assets/hc/hc_hist_table.txt", "r")
-    file = open("./results/hcresults.txt", "r")
+    file = open("./pages/assets/hc/hc_hist_table100.txt", "r")
+    # file = open("./pages/assets/hc/hc_hist_table300.txt", "r")
     line = file.readline()
     max_in_t = json.loads(line)
     hist_max = [max_in_t[0]]
