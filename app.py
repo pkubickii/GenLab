@@ -1,6 +1,6 @@
 import dash
 from dash import Dash, html, dcc, Input, Output, callback
-from pages import home, geo, ag, hc
+from pages import home, geo, ag, hc, ps
 import dash_bootstrap_components as dbc
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.css"
@@ -17,6 +17,7 @@ navbar = dbc.NavbarSimple(
             dbc.DropdownMenuItem("AG", href="/ag"),
             dbc.DropdownMenuItem("GEO", href="/geo"),
             dbc.DropdownMenuItem("HC", href="/hc"),
+            dbc.DropdownMenuItem("PS", href="/ps"),
         ],
         nav=True,
         label="Nawigacja",
@@ -50,6 +51,8 @@ def display_page(pathname):
         return ag.layout
     elif pathname == '/hc':
         return hc.layout
+    elif pathname == '/ps':
+        return ps.layout
     else:
         return '404'
 
