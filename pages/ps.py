@@ -132,14 +132,14 @@ form = dbc.Form(
                         dbc.InputGroup([
                             dbc.InputGroupText("N:"),
                             dbc.Input(id='n_value', type='number', min=1,
-                                      max=5000, placeholder='N', value=100),
+                                      max=200, placeholder='N', value=80),
                         ], className='me-3'),
                         ], width=2),
                 dbc.Col([
                         dbc.InputGroup([
                             dbc.InputGroupText("T:"),
                             dbc.Input(id='t_value', type='number', min=1,
-                                      max=5000, placeholder='T', value=100),
+                                      max=200, placeholder='T', value=70),
                         ], className='me-3'),
                         ], width=2),
             ]),
@@ -148,28 +148,28 @@ form = dbc.Form(
                     dbc.InputGroup([
                         dbc.InputGroupText("c1:"),
                         dbc.Input(id='c1_value', type='number', min=0, max=3,
-                                  placeholder='c1', value=0.8),
+                                  placeholder='c1', value=0.8, step=0.1),
                     ], className='me-3'),
                 ], width=2),
                 dbc.Col([
                     dbc.InputGroup([
                         dbc.InputGroupText("c2:"),
                         dbc.Input(id='c2_value', type='number', min=0, max=3,
-                                  placeholder='c2', value=1.0),
+                                  placeholder='c2', value=0.8, step=0.1),
                     ], className='me-3'),
                 ], width=2),
                 dbc.Col([
                     dbc.InputGroup([
                         dbc.InputGroupText("c3:"),
                         dbc.Input(id='c3_value', type='number', min=0, max=3,
-                                  placeholder='c3', value=1.2),
+                                  placeholder='c3', value=1.4, step=0.1),
                     ], className='me-3'),
                 ], width=2),
                 dbc.Col([
                     dbc.InputGroup([
                         dbc.InputGroupText("v:"),
                         dbc.Input(id='v_value', type='number', min=1, max=100,
-                                  placeholder='vicinity', value=50),
+                                  placeholder='vicinity', value=35),
                         dbc.InputGroupText("%"),
                     ], className='me-3'),
                 ], width=2),
@@ -200,6 +200,7 @@ layout = html.Div(
                 html.Br(),
                 dcc.Loading(children=[
                     html.Div([], id="ps_graph"),
+                    html.Br(),
                     html.Br(),
                     html.Div([], id='ps_mmm_graph'),
                     html.Br(),
@@ -350,5 +351,4 @@ def get_ps(n_clicks, input_a, input_b, input_d, input_n, input_t, input_c1, inpu
     return dbc.Table.from_dataframe(rdf.iloc[[0]], striped=True, bordered=True, hover=True), \
         dcc.Graph("ps_result_graph", figure=ps_fig, config={
             'autosizable': True,
-            'responsive': True,
         }), dcc.Graph("ps_minmax_graph", figure=ps_mmm_fig), ""

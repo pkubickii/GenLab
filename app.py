@@ -23,7 +23,7 @@ navbar = dbc.NavbarSimple(
         label="Navigation",
         className="fs-5"
     ),
-    brand="ISA LAB",
+    brand="Genetic Laboratory",
     color="primary",
     dark=True,
     class_name="mb-2 mx-0",
