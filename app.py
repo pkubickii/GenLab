@@ -20,7 +20,7 @@ navbar = dbc.NavbarSimple(
             dbc.DropdownMenuItem("PS", href="/ps"),
         ],
         nav=True,
-        label="Nawigacja",
+        label="Navigation",
         className="fs-5"
     ),
     brand="ISA LAB",

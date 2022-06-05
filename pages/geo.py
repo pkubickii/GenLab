@@ -128,7 +128,7 @@ form = dbc.Form(
                         ], className='me-3'),
                         ], width=2),
                 dbc.Col([
-                        dbc.Button("Uruchom GEO", outline=True, color='info',
+                        dbc.Button("Start GEO", outline=True, color='info',
                                    size='lg', id='submit_button', n_clicks=0),
                         ], width=2)
             ])

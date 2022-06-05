@@ -30,149 +30,173 @@ def generate_table(dataframe, max_rows=10):
     )
 
 
-layout = html.Div(children=[
-    html.Div([
-        html.H1(children='Algorytm Genetyczny', style={
-            'marginTop': '2rem',
-            'paddingBottom': '2rem',
+form = dbc.Form(
+    [
+        dbc.Row(
+            [
+                dbc.Col([
+                        dbc.InputGroup([
+                            dbc.InputGroupText("a:"),
+                            dbc.Input(id='a_value', type='number',
+                                      placeholder='wprowadź a', value=-4),
+                        ], className='me-3'),
+                        ], width=2),
+                dbc.Col([
+                        dbc.InputGroup([
+                            dbc.InputGroupText("b:"),
+                            dbc.Input(id='b_value', type='number',
+                                      placeholder='wprowadź b', value=12),
+                        ], className='me-3'),
+                        ], width=2),
+                dbc.Col([
+                        dbc.InputGroup([
+                            dbc.InputGroupText("d:"),
+                            dbc.Select(id='d_value',
+                                       options=[
+                                           {'label': '10^-2',
+                                               'value': (10 ** -2)},
+                                           {'label': '10^-3',
+                                               'value': (10 ** -3)},
+                                           {'label': '10^-4',
+                                               'value': (10 ** -4)},
+                                           {'label': '10^-5',
+                                               'value': (10 ** -5)},
+                                           {'label': '10^-6',
+                                               'value': (10 ** -6)},
+                                       ],
+                                       value=(10 ** -3),
+                                       ),
+                        ], className='me-3'),
+                        ], width=2),
+                dbc.Col([
+                        dbc.InputGroup([
+                            dbc.InputGroupText("N:"),
+                            dbc.Input(id='n_value', type='number', min=1,
+                                      max=200, placeholder='N', value=70),
+                        ], className='me-3'),
+                        ], width=2),
+                dbc.Col([
+                        dbc.InputGroup([
+                            dbc.InputGroupText("T:"),
+                            dbc.Input(id='t_value', type='number', min=1,
+                                      max=200, placeholder='T', value=140),
+                        ], className='me-3'),
+                        ], width=2),
+            ]),
+        dbc.Row([
+                dbc.Col([
+                    dbc.InputGroup([
+                        dbc.InputGroupText("pk:"),
+                        dbc.Input(id='pk_value', type='number', min=0, max=1,
+                                  placeholder='pk', step=0.05, value=0.8),
+                    ], className='me-3'),
+                ], width=2),
+                dbc.Col([
+                    dbc.InputGroup([
+                        dbc.InputGroupText("pm:"),
+                        dbc.Input(id='pm_value', type='number', min=0, max=1,
+                                  placeholder='pm', step=0.0001, value=0.0001),
+                    ], className='me-3'),
+                ], width=2),
+                dbc.Col([
+                    html.Div([
+                        daq.BooleanSwitch(
+                            id="elite_value",
+                            on=True,
+                            label="elite:",
+                            labelPosition='top'
+                        )
+                    ]),
+                ], width=2),
+                dbc.Col([
+                    html.Div([
+                        dbc.Button("Start Genetic Algorithm", outline=True, color='info',
+                                   size='lg', id='submit_button', n_clicks=0, class_name='w-100'),
+                    ], style={'textAlign': 'center'}),
+                ], width=4),
+                ], className='mt-2'),
+    ]
+)
+
+
+layout = html.Div(
+    [
+        html.Div([
+            html.H1("Genetic Algorithm",
+                    className='m-1 mb-3'),
+            form,
+            html.Div([], id='error_msg'),
+            html.Br(),
+        ], style={
+            'margin': 'auto',
+            'width': '90%',
         }),
-    ], style={
-        'margin': 'auto',
-        'width': '90%',
-    }),
-    html.Div([
-        html.Div([
-            html.Label('Początek przedziału:'),
-            dcc.Input(id='a_value', type='number',
-                      placeholder='wprowadź a', value=-4),
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            html.Label('Koniec przedziału:'),
-            dcc.Input(id='b_value', type='number',
-                      placeholder='wprowadź b', value=12),
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            html.Label('Ilość osobników:'),
-            dcc.Input(id='n_value', type='number', min=1, max=200,
-                      placeholder='wprowadź n', value=70),
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            html.Label('Dokładność:'),
-            dcc.Dropdown(id='d_value',
-                         options=[
-                             {'label': '10^-2', 'value': (10 ** -2)},
-                             {'label': '10^-3', 'value': (10 ** -3)},
-                             {'label': '10^-4', 'value': (10 ** -4)},
-                             {'label': '10^-5', 'value': (10 ** -5)},
-                             {'label': '10^-6', 'value': (10 ** -6)},
-                         ], value=(10 ** -3), clearable=False
-                         ),
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            html.Label('pk:'),
-            dcc.Input(id='pk_value', type='number', min=0,
-                      max=1, placeholder='pk', value=0.9),
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            html.Label('pm:'),
-            dcc.Input(id='pm_value', type='number', min=0,
-                      max=1, placeholder='pm', value=0.0001),
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            daq.BooleanSwitch(
-                id="elite_value",
-                on=True,
-                label="elita:",
-                labelPosition='top'
-            )
-        ], style={'marginLeft': '10px'}),
-        html.Div([
-            html.Label('T:'),
-            dcc.Input(id='t_value', type='number', min=1,
-                      max=200, placeholder='T', value=140),
-        ], style={'marginLeft': '10px'}),
-    ], style={
-        'display': 'flex',
-        'flexWrap': 'wrap',
-        'margin': 'auto',
-        'width': '90%',
-    }),
-
-    html.Br(),
-    html.Div([
-        dbc.Button("Uruchom Algorytm Genetyczny", outline=True,
-                   color="danger", size="lg", id='submit_button', n_clicks=0),
-    ], style={
-        'textAlign': 'center',
-        'margin': 'auto',
-    }),
-
-    html.Br(),
-    html.Div([], id="error_msg"),
-
-    html.Br(),
-    html.Div([
-        daq.ToggleSwitch(
-            id='btn_toggle',
-            value=True,
-            label=["Pokaż tabelę", "Ukryj tabelę"],
-            style={'margin': "0", 'padding': "0"},
-        ),
-    ], style={
-        'width': '30%',
-        'margin': 'auto',
-    }),
-    html.Br(),
-    html.Div([
-        html.Div([
-
-        ], id='population_table'),
-    ], id='div_toggle', style={
-        'margin': 'auto',
-        'width': '90%',
-    }),
-
-    html.Br(),
-    html.Div([
-        dcc.Graph(id="ag_graph"),
-    ], style={
-        'margin': 'auto',
-        'width': '90%',
-    }),
-    html.Br(),
-
-    html.Div([], id="generate_table", style={
-        'margin': 'auto',
-        'width': '50%',
-    }),
-    html.Br(),
-    html.Div([
-        dbc.Button("Pobierz przebieg populacji", outline=True,
-                   color="info", id='download_button', n_clicks=0),
-        dcc.Download(id="download_populations")
-    ], style={
-        'textAlign': 'center',
-        'margin': 'auto',
-    }),
-    html.Br(),
-    html.Div([
-        dbc.Button("Przeprowadź testy Algorytmu Genetycznego",
-                   outline=True, color="info", id='start_test_button', n_clicks=0),
+        html.Br(),
+        html.Div([], id="error_msg"),
         html.Br(),
         html.Br(),
-        dcc.Loading(children=[
-            html.Div([], id="div_test_results", style={
-                'margin': 'auto',
-                'width': '50%'
-            }),
-            dcc.Download(id="download_top10"),
-        ], style={'position': 'relative', 'display': 'flex', 'justify-content': 'center'}),
-    ], style={
-        'textAlign': 'center',
-        'margin': 'auto',
-    }),
-    html.Br(),
-])
+        html.Div([
+            daq.ToggleSwitch(
+                id='btn_toggle',
+                value=True,
+                label=["Show table", "Hide table"],
+                style={'margin': "0", 'padding': "0"},
+            ),
+        ], style={
+            'width': '30%',
+            'margin': 'auto',
+        }),
+        html.Br(),
+        html.Div([
+            html.Div([
+
+            ], id='population_table'),
+        ], id='div_toggle', style={
+            'margin': 'auto',
+            'width': '90%',
+        }),
+
+        html.Br(),
+        html.Div([
+            dcc.Graph(id="ag_graph"),
+        ], style={
+            'margin': 'auto',
+            'width': '90%',
+        }),
+        html.Br(),
+
+        html.Div([], id="generate_table", style={
+            'margin': 'auto',
+            'width': '50%',
+        }),
+        html.Br(),
+        html.Div([
+            dbc.Button("Download populations data", outline=True,
+                       color="info", id='download_button', n_clicks=0),
+            dcc.Download(id="download_populations")
+        ], style={
+            'textAlign': 'center',
+            'margin': 'auto',
+        }),
+        html.Br(),
+        html.Div([
+            dbc.Button("Run parameters tests for Genetic Algorithm",
+                       outline=True, color="info", id='start_test_button', n_clicks=0),
+            html.Br(),
+            html.Br(),
+            dcc.Loading(children=[
+                html.Div([], id="div_test_results", style={
+                    'margin': 'auto',
+                    'width': '50%'
+                }),
+                dcc.Download(id="download_top10"),
+            ], style={'position': 'relative', 'display': 'flex', 'justify-content': 'center'}),
+        ], style={
+            'textAlign': 'center',
+            'margin': 'auto',
+        }),
+        html.Br(),
+    ])
 
 
 @callback(Output('div_test_results', 'children'),
@@ -193,7 +217,7 @@ def start_test(start_test):
 
 @callback(Output('div_toggle', 'hidden'),
           Input('btn_toggle', 'value'),
-          prevent_initial_call=True)
+          )
 def toggle_table(value):
     return value
 
@@ -269,7 +293,7 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
     elite_memo = elite.get_best(
         x_reals, [cmp.compute_fx(float(x)) for x in x_reals])
 
-    for i in range(float(input_t)):
+    for i in range(int(input_t)):
         fxs = [cmp.compute_fx(float(x)) for x in x_reals]
         gxs = sel.compute_gxs(fxs, min(fxs), d)
         pxs = sel.compute_pxs(gxs)
@@ -341,15 +365,15 @@ def update_table(button_submit, button_download, input_a, input_b, input_n, inpu
         "fx_max": fx_maxs,
         "fx_avg": fx_avgs,
         "fx_min": fx_mins,
-        "pokolenie": np.arange(1, input_t + 1),
+        "generations": np.arange(1, input_t + 1),
     })
 
     ag_fig = px.line(df_ag,
-                     x="pokolenie",
+                     x="generations",
                      y=["fx_max", "fx_avg", "fx_min"],
-                     title="Wykres przebiegu f_max(x), f_min(x) oraz f_avg(x)",
-                     labels={"pokolenie": f'Pokolenia dla T={input_t}',
-                             "value": "Wartości f(x)"},
+                     title="Plot for f_max(x), f_min(x) oraz f_avg(x)",
+                     labels={"generations": f'Generations for T={input_t}',
+                             "value": "f(x) values"},
                      markers="true")
 
     if not ctx.triggered:

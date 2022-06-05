@@ -175,7 +175,7 @@ form = dbc.Form(
                 ], width=2),
                 dbc.Col([
                     html.Div([
-                        dbc.Button("Uruchom PC", outline=True, color='info',
+                        dbc.Button("Start PS", outline=True, color='info',
                                    size='lg', id='submit_button', n_clicks=0),
                     ], style={'textAlign': 'center'}),
                 ], width=2),
@@ -197,17 +197,21 @@ layout = html.Div(
         }),
         html.Div(
             [
-                # dcc.Graph(id='ps_result_fig'),
-                html.Div([], id="ps_graph"),
                 html.Br(),
                 dcc.Loading(children=[
-                    html.Div([
-                    ], id='ps_result_table', className="fs-5 font-monospace")
+                    html.Div([], id="ps_graph"),
+                    html.Br(),
+                    html.Div([], id='ps_mmm_graph'),
+                    html.Br(),
+                    html.Div([], id='ps_result_table',
+                             className="fs-5 font-monospace"),
+                    html.Br(),
                 ]),
                 html.Br(),
+                html.Br(),
                 html.Div([
-                    dbc.Button("Wynik testów", id="ps_test_button", outline=True, color="success",
-                               size="lg", n_clicks=0),
+                    dbc.Button("Test results", id="ps_test_button", outline=True, color="success",
+                               size="lg", n_clicks=0, style={'display': 'none'}),
                 ], style={
                     'textAlign': 'center'
                 }),
@@ -233,8 +237,6 @@ layout = html.Div(
         html.Div([], id='generate_table', style={'display': 'none'}),
         html.Div([], id='download_populations', style={'display': 'none'}),
     ]
-
-
 )
 
 
@@ -245,6 +247,7 @@ def get_size(fxs):
 
 @ callback(Output('ps_result_table', 'children'),
            Output('ps_graph', 'children'),
+           Output('ps_mmm_graph', 'children'),
            Output('ps_error_msg', 'children'),
            Input('submit_button', 'n_clicks'),
            State('a_value', 'value'),
@@ -259,13 +262,13 @@ def get_size(fxs):
            prevent_initial_call=True)
 def get_ps(n_clicks, input_a, input_b, input_d, input_n, input_t, input_c1, input_c2, input_c3, input_v):
     if None in [input_a, input_b, input_d, input_n, input_t, input_c1, input_c2, input_c3, input_v]:
-        return no_update, no_update, html.Div(
+        return no_update, no_update, no_update, html.Div(
             "Pola wypełniamy wartościami numerycznymi.", style={'color': 'red'})
     elif int(np.ma.round(input_a)) == int(np.ma.round(input_b)):
-        return no_update, no_update, html.Div(
+        return no_update, no_update, no_update, html.Div(
             "Przedział jest zerowy! Podaj prawidłowy przedział za pomocą liczb całkowitych.", style={'color': 'red'})
     elif input_a < -10000000 or input_a > 10000000 or input_b < -10000000 or input_b > 10000000:
-        return no_update, no_update, html.Div(
+        return no_update, no_update, no_update, html.Div(
             "Przedział jest za duży! Podaj prawidłowy przedział z zakresu [-10M: 10M]",
             style={'color': 'red'})
     # params init:
@@ -284,7 +287,9 @@ def get_ps(n_clicks, input_a, input_b, input_d, input_n, input_t, input_c1, inpu
     c2 = round(float(input_c2), 1)
     c3 = round(float(input_c3), 1)
     vicinity = round(float(input_v))
+    # PCA
     df_list = particle_swarm(a, b, n, d, time_t, c1, c2, c3, vicinity)
+
     zeros = np.zeros(n * time_t)
     times = np.arange(time_t)
     df = pd.DataFrame()
@@ -296,16 +301,13 @@ def get_ps(n_clicks, input_a, input_b, input_d, input_n, input_t, input_c1, inpu
     size = get_size(df["p_fxs"])
     df.insert(loc=9, column="size", value=size)
 
-    path = './results'
-    isExist = os.path.exists(path)
-    if not isExist:
-        os.makedirs(path)
-    df.to_csv("./results/psresult.csv")
+    rdf = df.copy()
     df['particle'] = df['particle'].astype(float)
     ps_fig = px.scatter(
         df,
         x="particle",
         y="zeros",
+        labels={"particle": "particle position", "zeros": "reference point"},
         color="p_id",
         size="size",
         size_max=20,
@@ -325,7 +327,28 @@ def get_ps(n_clicks, input_a, input_b, input_d, input_n, input_t, input_c1, inpu
         }
     )
     ps_fig.update_layout({'xaxis.autorange': True, 'yaxis.autorange': True})
-    return no_update, dcc.Graph("ps_result_graph", figure=ps_fig, config={
-        'autosizable': True,
-        'responsive': True,
-    }), ""
+
+    path = './results'
+    isExist = os.path.exists(path)
+    if not isExist:
+        os.makedirs(path)
+    df = df.drop(columns=["zeros", "size"])
+    df.to_csv(f'./results/psresult{n}_{time_t}.csv', index_label="lp")
+
+    rdf = rdf.sort_values(["p_fxs", "time_t"], ascending=[False, True])
+    rdf = rdf.reset_index()
+    rdf = rdf.drop(columns=["index", "zeros", "bl",
+                   "bl_fxs", "bg", "bg_fxs", "size"])
+    rdf.columns = ["period T", "particle id", "particle", "value of fx(max)"]
+    df = df.groupby(by="time_t").agg({"p_fxs": ['max', 'mean', 'min']})
+    df.columns = df.columns.droplevel(0)
+    df.columns = ["fx_max", "fx_avg", "fx_min"]
+    ps_mmm_fig = px.line(df,
+                         y=["fx_max", "fx_avg", "fx_min"],
+                         title="Plot of f_max(particle), f_avg(particle) oraz f_min(particle)",
+                         markers=True)
+    return dbc.Table.from_dataframe(rdf.iloc[[0]], striped=True, bordered=True, hover=True), \
+        dcc.Graph("ps_result_graph", figure=ps_fig, config={
+            'autosizable': True,
+            'responsive': True,
+        }), dcc.Graph("ps_minmax_graph", figure=ps_mmm_fig), ""

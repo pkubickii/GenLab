@@ -108,7 +108,7 @@ form = dbc.Form(
                         ], className='me-3'),
                         ], width=2),
                 dbc.Col([
-                        dbc.Button("Uruchom HC", outline=True, color='info',
+                        dbc.Button("Start HC", outline=True, color='info',
                                    size='lg', id='submit_button', n_clicks=0),
                         ], width=2)
             ])
@@ -137,7 +137,7 @@ layout = html.Div(
                 ]),
                 html.Br(),
                 html.Div([
-                    dbc.Button("Wynik testów", id="hc_test_button", outline=True, color="success",
+                    dbc.Button("Tests results", id="hc_test_button", outline=True, color="success",
                                size="lg", n_clicks=0),
                 ], style={
                     'textAlign': 'center'
@@ -243,7 +243,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
     df = pd.concat(df_climbs, keys=times)
     df.insert(loc=0, column="period", value=df.index.get_level_values(0))
     df_best = df.sort_values(["vcfx_climb", "period"], ascending=[False, True])
-    df_best.columns = ["okres", "vc bin", "vc real", "f(vc)"]
+    df_best.columns = ["period", "vc bin", "vc real", "f(vc)"]
     df_best.index = np.arange(df_best.shape[0])
     df_best = df_best.truncate(after=0)
     t_steps = []
@@ -273,7 +273,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
         shared_yaxes=True,
         vertical_spacing=0.0,
         horizontal_spacing=0.0,
-        x_title="okres",
+        x_title="period",
         y_title="f(Vc)"
     )
     for i in range(time_t):
@@ -286,7 +286,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
             hovertemplate='<br>fx = <b>%{y}</b><br>' +
             'vcr = <b>%{text}</b><br>',
             text=vcr,
-            name=f'okres {i}'
+            name=f'period {i}'
         ), row=1, col=1)
 
     hc_result_fig.add_trace(go.Scatter(
@@ -302,7 +302,7 @@ def get_table(n_clicks, input_a, input_b, input_d, input_t):
     hc_result_fig.update_layout(
         autosize=True,
         height=800,
-        title_text="Algorytm Najwyższego Wzrostu",
+        title_text="Hill Climbing Algorithm plot",
         hovermode='x unified',
     )
     return dbc.Table.from_dataframe(df_best, striped=True, bordered=True, hover=True), hc_result_fig, ""
