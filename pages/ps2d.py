@@ -454,6 +454,7 @@ def get_ps(n_clicks, input_a, input_b, input_d, input_n, input_t, input_c1, inpu
                            y=["fx_min", "fx_avg", "fx_max"],
                            title="Plot of f_min(particle), f_avg(particle) oraz f_max(particle)",
                            markers=True)
+
     best_particle = rdf.iloc[[0]]
     x1str = [f'{best_particle["x1"][0]:.{dot_places}f}']
     x2str = [f'{best_particle["x2"][0]:.{dot_places}f}']
